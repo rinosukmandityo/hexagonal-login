@@ -65,7 +65,14 @@ func init() {
 	userService = logic.NewUserService(userRepo)
 }
 
-func TestInsertUser(t *testing.T) {
+func TestUserService(t *testing.T) {
+	t.Run("Insert User", InsertUser)
+	t.Run("Update User", UpdateUser)
+	t.Run("Delete User", DeleteUser)
+	t.Run("Get User", GetUser)
+}
+
+func InsertUser(t *testing.T) {
 	testdata := UserTestData()
 	wg := sync.WaitGroup{}
 
@@ -108,7 +115,7 @@ func TestInsertUser(t *testing.T) {
 	})
 }
 
-func TestUpdateUser(t *testing.T) {
+func UpdateUser(t *testing.T) {
 	testdata := UserTestData()
 	t.Run("Case 1: Update data", func(t *testing.T) {
 		_data := testdata[0]
@@ -125,7 +132,7 @@ func TestUpdateUser(t *testing.T) {
 	})
 }
 
-func TestDeleteUser(t *testing.T) {
+func DeleteUser(t *testing.T) {
 	testdata := UserTestData()
 	t.Run("Case 1: Delete data", func(t *testing.T) {
 		_data := testdata[1]
@@ -141,7 +148,7 @@ func TestDeleteUser(t *testing.T) {
 	})
 }
 
-func TestGetUser(t *testing.T) {
+func GetUser(t *testing.T) {
 	testdata := UserTestData()
 	t.Run("Case 1: Get data", func(t *testing.T) {
 		_data := testdata[0]
