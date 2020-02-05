@@ -17,8 +17,6 @@ import (
 	"github.com/rinosukmandityo/hexagonal-login/logic"
 	m "github.com/rinosukmandityo/hexagonal-login/models"
 	repo "github.com/rinosukmandityo/hexagonal-login/repositories"
-
-	"github.com/go-chi/chi"
 )
 
 /*
@@ -33,7 +31,7 @@ import (
 
 var (
 	userRepo repo.UserRepository
-	r        *chi.Mux
+	ts       *httptest.Server
 )
 
 func UserTestData() []m.User {
@@ -69,8 +67,8 @@ func init() {
 	userRepo = helper.ChooseRepo()
 	userService := logic.NewUserService(userRepo)
 	handler := h.NewUserHandler(userService)
-
-	r = h.RegisterHandler(handler)
+	r := h.RegisterHandler(handler)
+	ts = httptest.NewServer(r)
 }
 
 func readUserData(resp *http.Response) (*m.User, error) {
@@ -134,9 +132,6 @@ func TestInsertUser(t *testing.T) {
 	testdata := UserTestData()
 	wg := sync.WaitGroup{}
 
-	ts := httptest.NewServer(r)
-	defer ts.Close()
-
 	t.Run("Case 1: Save data", func(t *testing.T) {
 		for _, data := range testdata {
 			wg.Add(1)
@@ -179,7 +174,6 @@ func TestInsertUser(t *testing.T) {
 func TestUpdateUser(t *testing.T) {
 	// t.Skip()
 	testdata := UserTestData()
-	ts := httptest.NewServer(r)
 	t.Run("Case 1: Update data", func(t *testing.T) {
 		_data := testdata[0]
 		_data.Username = _data.Username + "UPDATED"
@@ -198,7 +192,6 @@ func TestUpdateUser(t *testing.T) {
 func TestDeleteUser(t *testing.T) {
 	// t.Skip()
 	testdata := UserTestData()
-	ts := httptest.NewServer(r)
 	t.Run("Case 1: Delete data", func(t *testing.T) {
 		_data := testdata[1]
 		if e := PostData(t, ts, "/delete", _data); e != nil {
@@ -216,7 +209,6 @@ func TestDeleteUser(t *testing.T) {
 func TestGetDataById(t *testing.T) {
 	// t.Skip()
 	testdata := UserTestData()
-	ts := httptest.NewServer(r)
 	t.Run("Case 1: Get Data", func(t *testing.T) {
 		_data := testdata[0]
 		if e := GetData(t, ts, fmt.Sprintf("/%s", _data.ID), _data.ID); e != nil {
