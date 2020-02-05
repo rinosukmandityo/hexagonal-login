@@ -1,4 +1,6 @@
-package api
+// +build user_http
+
+package api_test
 
 import (
 	"bytes"
@@ -12,17 +14,24 @@ import (
 	"sync"
 	"testing"
 
-	h "github.com/rinosukmandityo/hexagonal-login/api"
+	. "github.com/rinosukmandityo/hexagonal-login/api"
 	"github.com/rinosukmandityo/hexagonal-login/helper"
 	"github.com/rinosukmandityo/hexagonal-login/logic"
 	m "github.com/rinosukmandityo/hexagonal-login/models"
 	repo "github.com/rinosukmandityo/hexagonal-login/repositories"
+
+	"github.com/go-chi/chi"
 )
 
 /*
 	==================
 	RUN FROM TERMINAL
 	==================
+	go test -v -tags=user_http
+
+	===================================
+	TO SET DATABASE INFO FROM TERMINAL
+	===================================
 	set mongo_url=mongodb://localhost:27017/local
 	set mongo_timeout=10
 	set mongo_db=local
@@ -31,6 +40,7 @@ import (
 
 var (
 	userRepo repo.UserRepository
+	r        *chi.Mux
 	ts       *httptest.Server
 )
 
@@ -66,9 +76,18 @@ func UserTestData() []m.User {
 func init() {
 	userRepo = helper.ChooseRepo()
 	userService := logic.NewUserService(userRepo)
-	handler := h.NewUserHandler(userService)
-	r := h.RegisterHandler(handler)
+	handler := NewUserHandler(userService)
+	r = RegisterHandler(handler)
+}
+
+func TestUserHTTP(t *testing.T) {
 	ts = httptest.NewServer(r)
+	defer ts.Close()
+
+	t.Run("Insert User", InsertUser)
+	t.Run("Update User", UpdateUser)
+	t.Run("Delete User", DeleteUser)
+	t.Run("Get User", GetDataById)
 }
 
 func readUserData(resp *http.Response) (*m.User, error) {
@@ -77,7 +96,7 @@ func readUserData(resp *http.Response) (*m.User, error) {
 		return nil, e
 	}
 	defer resp.Body.Close()
-	user, _ := h.GetSerializer(h.ContentTypeJson).Decode(body)
+	user, _ := GetSerializer(ContentTypeJson).Decode(body)
 	return user, nil
 }
 
@@ -118,15 +137,14 @@ func GetData(t *testing.T, ts *httptest.Server, url, expected string) error {
 }
 
 func getBytes(_data m.User) ([]byte, error) {
-	dataBytes, e := h.GetSerializer(h.ContentTypeJson).Encode(&_data)
+	dataBytes, e := GetSerializer(ContentTypeJson).Encode(&_data)
 	if e != nil {
 		return dataBytes, e
 	}
 	return dataBytes, nil
 }
 
-func TestInsertUser(t *testing.T) {
-	// t.Skip()
+func InsertUser(t *testing.T) {
 	userService := logic.NewUserService(userRepo)
 
 	testdata := UserTestData()
@@ -171,8 +189,7 @@ func TestInsertUser(t *testing.T) {
 	})
 }
 
-func TestUpdateUser(t *testing.T) {
-	// t.Skip()
+func UpdateUser(t *testing.T) {
 	testdata := UserTestData()
 	t.Run("Case 1: Update data", func(t *testing.T) {
 		_data := testdata[0]
@@ -189,8 +206,7 @@ func TestUpdateUser(t *testing.T) {
 	})
 }
 
-func TestDeleteUser(t *testing.T) {
-	// t.Skip()
+func DeleteUser(t *testing.T) {
 	testdata := UserTestData()
 	t.Run("Case 1: Delete data", func(t *testing.T) {
 		_data := testdata[1]
@@ -206,8 +222,7 @@ func TestDeleteUser(t *testing.T) {
 	})
 }
 
-func TestGetDataById(t *testing.T) {
-	// t.Skip()
+func GetDataById(t *testing.T) {
 	testdata := UserTestData()
 	t.Run("Case 1: Get Data", func(t *testing.T) {
 		_data := testdata[0]
@@ -227,7 +242,7 @@ func makeRequest(t *testing.T, ts *httptest.Server, method, path string, body io
 	if e != nil {
 		return nil, "", e
 	}
-	req.Header.Set("Content-Type", h.ContentTypeJson)
+	req.Header.Set("Content-Type", ContentTypeJson)
 
 	var resp *http.Response
 	switch method {
