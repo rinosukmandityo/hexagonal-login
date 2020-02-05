@@ -1,4 +1,6 @@
-package services
+// +build user_service
+
+package services_test
 
 import (
 	"sync"
@@ -7,13 +9,18 @@ import (
 	"github.com/rinosukmandityo/hexagonal-login/helper"
 	"github.com/rinosukmandityo/hexagonal-login/logic"
 	m "github.com/rinosukmandityo/hexagonal-login/models"
-	repo "github.com/rinosukmandityo/hexagonal-login/repositories"
+	. "github.com/rinosukmandityo/hexagonal-login/services"
 )
 
 /*
 	==================
 	RUN FROM TERMINAL
 	==================
+	go test -v -tags=user_service
+
+	===================================
+	TO SET DATABASE INFO FROM TERMINAL
+	===================================
 	set mongo_url=mongodb://localhost:27017/local
 	set mongo_timeout=10
 	set mongo_db=local
@@ -21,7 +28,7 @@ import (
 */
 
 var (
-	userRepo repo.UserRepository
+	userService UserService
 )
 
 func UserTestData() []m.User {
@@ -54,12 +61,11 @@ func UserTestData() []m.User {
 }
 
 func init() {
-	userRepo = helper.ChooseRepo()
+	userRepo := helper.ChooseRepo()
+	userService = logic.NewUserService(userRepo)
 }
 
 func TestInsertUser(t *testing.T) {
-	userService := logic.NewUserService(userRepo)
-
 	testdata := UserTestData()
 	wg := sync.WaitGroup{}
 
@@ -104,7 +110,6 @@ func TestInsertUser(t *testing.T) {
 
 func TestUpdateUser(t *testing.T) {
 	testdata := UserTestData()
-	userService := logic.NewUserService(userRepo)
 	t.Run("Case 1: Update data", func(t *testing.T) {
 		_data := testdata[0]
 		_data.Username = _data.Username + "UPDATED"
@@ -122,7 +127,6 @@ func TestUpdateUser(t *testing.T) {
 
 func TestDeleteUser(t *testing.T) {
 	testdata := UserTestData()
-	userService := logic.NewUserService(userRepo)
 	t.Run("Case 1: Delete data", func(t *testing.T) {
 		_data := testdata[1]
 		if e := userService.Delete(&_data); e != nil {
@@ -139,7 +143,6 @@ func TestDeleteUser(t *testing.T) {
 
 func TestGetUser(t *testing.T) {
 	testdata := UserTestData()
-	userService := logic.NewUserService(userRepo)
 	t.Run("Case 1: Get data", func(t *testing.T) {
 		_data := testdata[0]
 		if _, e := userService.GetById(_data.ID); e != nil {
