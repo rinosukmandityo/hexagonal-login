@@ -1,4 +1,4 @@
-package helper
+package repohelper
 
 import (
 	"log"

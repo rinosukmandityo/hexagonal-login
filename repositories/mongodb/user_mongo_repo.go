@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/rinosukmandityo/hexagonal-login/logic"
+	"github.com/rinosukmandityo/hexagonal-login/helper"
 	m "github.com/rinosukmandityo/hexagonal-login/models"
 	repo "github.com/rinosukmandityo/hexagonal-login/repositories"
 
@@ -68,7 +68,7 @@ func (r *userMongoRepository) GetById(id string) (*m.User, error) {
 	c := r.client.Database(r.database).Collection(user.TableName())
 	if e := c.FindOne(ctx, bson.M{"_id": id}).Decode(user); e != nil {
 		if e == mongo.ErrNoDocuments {
-			return nil, errors.Wrap(logic.ErrUserNotFound, "repository.User.GetById")
+			return nil, errors.Wrap(helper.ErrUserNotFound, "repository.User.GetById")
 		}
 		return user, errors.Wrap(e, "repository.User.GetById")
 	}
@@ -82,7 +82,7 @@ func (r *userMongoRepository) GetByUsername(username string) (bool, *m.User, err
 	c := r.client.Database(r.database).Collection(user.TableName())
 	if e := c.FindOne(ctx, bson.M{"Username": username}).Decode(user); e != nil {
 		if e == mongo.ErrNoDocuments {
-			return false, nil, errors.Wrap(logic.ErrUserNotFound, "repository.User.GetById")
+			return false, nil, errors.Wrap(helper.ErrUserNotFound, "repository.User.GetById")
 		}
 		return false, user, errors.Wrap(e, "repository.User.GetById")
 	}
@@ -119,7 +119,7 @@ func (r *userMongoRepository) Delete(user *m.User) error {
 	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
 	defer cancel()
 	c := r.client.Database(r.database).Collection(new(m.User).TableName())
-	if res, e := c.DeleteOne(ctx, user); e != nil {
+	if res, e := c.DeleteOne(ctx, bson.M{"_id": user.ID}); e != nil {
 		return errors.Wrap(e, "repository.User.Delete")
 	} else {
 		if res.DeletedCount == 0 {

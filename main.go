@@ -9,8 +9,8 @@ import (
 	"syscall"
 
 	h "github.com/rinosukmandityo/hexagonal-login/api"
-	"github.com/rinosukmandityo/hexagonal-login/helper"
 	"github.com/rinosukmandityo/hexagonal-login/logic"
+	rh "github.com/rinosukmandityo/hexagonal-login/repositories/helper"
 )
 
 /*
@@ -24,7 +24,7 @@ import (
 */
 
 func main() {
-	userRepo := helper.ChooseRepo()
+	userRepo := rh.ChooseRepo()
 	userService := logic.NewUserService(userRepo)
 	handler := h.NewUserHandler(userService)
 

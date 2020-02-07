@@ -4,7 +4,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/rinosukmandityo/hexagonal-login/logic"
+	"github.com/rinosukmandityo/hexagonal-login/helper"
 	svc "github.com/rinosukmandityo/hexagonal-login/services"
 
 	"github.com/go-chi/chi"
@@ -30,7 +30,7 @@ func (u *userhandler) Get(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	user, e := u.userService.GetById(id)
 	if e != nil {
-		if errors.Cause(e) == logic.ErrUserNotFound {
+		if errors.Cause(e) == helper.ErrUserNotFound {
 			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 			return
 		}

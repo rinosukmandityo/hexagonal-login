@@ -6,9 +6,9 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/rinosukmandityo/hexagonal-login/helper"
 	"github.com/rinosukmandityo/hexagonal-login/logic"
 	m "github.com/rinosukmandityo/hexagonal-login/models"
+	rh "github.com/rinosukmandityo/hexagonal-login/repositories/helper"
 	. "github.com/rinosukmandityo/hexagonal-login/services"
 )
 
@@ -61,7 +61,7 @@ func UserTestData() []m.User {
 }
 
 func init() {
-	userRepo := helper.ChooseRepo()
+	userRepo := rh.ChooseRepo()
 	userService = logic.NewUserService(userRepo)
 }
 
@@ -75,6 +75,16 @@ func TestUserService(t *testing.T) {
 func InsertUser(t *testing.T) {
 	testdata := UserTestData()
 	wg := sync.WaitGroup{}
+
+	// Clean test data if any
+	for _, data := range testdata {
+		wg.Add(1)
+		go func(_data m.User) {
+			userService.Delete(&_data)
+			wg.Done()
+		}(data)
+	}
+	wg.Wait()
 
 	t.Run("Case 1: Save data", func(t *testing.T) {
 		for _, data := range testdata {

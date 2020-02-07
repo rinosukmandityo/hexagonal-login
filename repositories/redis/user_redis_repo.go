@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/rinosukmandityo/hexagonal-login/logic"
+	"github.com/rinosukmandityo/hexagonal-login/helper"
 	m "github.com/rinosukmandityo/hexagonal-login/models"
 	repo "github.com/rinosukmandityo/hexagonal-login/repositories"
 
@@ -59,7 +59,7 @@ func (r *userRedisRepository) GetById(id string) (*m.User, error) {
 		return user, errors.Wrap(e, "repository.Redis.GetById")
 	}
 	if len(data) == 0 {
-		return nil, errors.Wrap(logic.ErrUserNotFound, "repository.User.GetById")
+		return nil, errors.Wrap(helper.ErrUserNotFound, "repository.User.GetById")
 	}
 	user.ID = data["ID"]
 	user.Username = data["Username"]
@@ -78,7 +78,7 @@ func (r *userRedisRepository) GetByUsername(username string) (bool, *m.User, err
 		return false, user, errors.Wrap(e, "repository.Redis.GetById")
 	}
 	if len(data) == 0 {
-		return false, nil, errors.Wrap(logic.ErrUserNotFound, "repository.User.GetById")
+		return false, nil, errors.Wrap(helper.ErrUserNotFound, "repository.User.GetById")
 	}
 	user.ID = data["ID"]
 	user.Username = data["Username"]

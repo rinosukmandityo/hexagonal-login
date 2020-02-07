@@ -19,12 +19,3 @@ func NewLoginService(loginRepo repo.LoginRepository) svc.LoginService {
 func (u *loginService) Authenticate(username, password string) (bool, *m.User, error) {
 	return u.loginRepo.Authenticate(username, password)
 }
-
-func (u *loginService) ChangePassword(user m.User, newpassword string) error {
-	return u.loginRepo.ChangePassword(user, newpassword)
-
-}
-func (u *loginService) UserActivation(activationkey string) error {
-	return u.loginRepo.UserActivation(activationkey)
-
-}
