@@ -1,5 +1,9 @@
 package models
 
+import (
+	"strconv"
+)
+
 type User struct {
 	ID       string `json:"ID" bson:"_id" msgpack:"_id"`
 	Username string `json:"Username" bson:"Username" msgpack:"Username"`
@@ -27,4 +31,26 @@ func NewUserDefaultData() *User {
 	user.Password = "Password.1"
 	user.Name = "User 001"
 	return user
+}
+
+func (user *User) FormingUserData(data map[string]string) {
+	user.ID = data["ID"]
+	user.Username = data["Username"]
+	user.Email = data["Email"]
+	user.Password = data["Password"]
+	user.Name = data["Name"]
+	user.Address = data["Address"]
+	user.IsActive, _ = strconv.ParseBool(data["IsActive"])
+}
+
+func (user *User) FormingData() map[string]interface{} {
+	return map[string]interface{}{
+		"ID":       user.ID,
+		"Username": user.Username,
+		"Email":    user.Email,
+		"Password": user.Password,
+		"Name":     user.Name,
+		"Address":  user.Address,
+		"IsActive": user.IsActive,
+	}
 }

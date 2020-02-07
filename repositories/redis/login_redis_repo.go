@@ -2,7 +2,6 @@ package redis
 
 import (
 	"fmt"
-	"strconv"
 
 	"github.com/rinosukmandityo/hexagonal-login/helper"
 	m "github.com/rinosukmandityo/hexagonal-login/models"
@@ -52,13 +51,7 @@ func (r *loginRedisRepository) Authenticate(username, password string) (bool, *m
 	if len(data) == 0 {
 		return false, nil, errors.Wrap(helper.ErrUserNotFound, "repository.User.GetById")
 	}
-	user.ID = data["ID"]
-	user.Username = data["Username"]
-	user.Email = data["Email"]
-	user.Password = data["Password"]
-	user.Name = data["Name"]
-	user.Address = data["Address"]
-	user.IsActive, _ = strconv.ParseBool(data["IsActive"])
+	user.FormingUserData(data)
 
 	if repo.IsPasswordMatch(password, user.Password) {
 		return false, user, errors.Wrap(errors.New("Password is incorrect"), "repository.Login.Authenticate")

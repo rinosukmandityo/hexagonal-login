@@ -1,8 +1,6 @@
 package redis
 
 import (
-	"strconv"
-
 	"github.com/rinosukmandityo/hexagonal-login/helper"
 	m "github.com/rinosukmandityo/hexagonal-login/models"
 	repo "github.com/rinosukmandityo/hexagonal-login/repositories"
@@ -52,13 +50,7 @@ func (r *userRedisRepository) GetById(id string) (*m.User, error) {
 	if len(data) == 0 {
 		return nil, errors.Wrap(helper.ErrUserNotFound, "repository.User.GetById")
 	}
-	user.ID = data["ID"]
-	user.Username = data["Username"]
-	user.Email = data["Email"]
-	user.Password = data["Password"]
-	user.Name = data["Name"]
-	user.Address = data["Address"]
-	user.IsActive, _ = strconv.ParseBool(data["IsActive"])
+	user.FormingUserData(data)
 	return user, nil
 }
 func (r *userRedisRepository) GetByUsername(username string) (bool, *m.User, error) {
@@ -71,26 +63,13 @@ func (r *userRedisRepository) GetByUsername(username string) (bool, *m.User, err
 	if len(data) == 0 {
 		return false, nil, errors.Wrap(helper.ErrUserNotFound, "repository.User.GetById")
 	}
-	user.ID = data["ID"]
-	user.Username = data["Username"]
-	user.Email = data["Email"]
-	user.Password = data["Password"]
-	user.Name = data["Name"]
-	user.Address = data["Address"]
-	user.IsActive, _ = strconv.ParseBool(data["IsActive"])
+	user.FormingUserData(data)
 	return true, user, nil
 }
 func (r *userRedisRepository) Store(user *m.User) error {
 	key := generateKey(user.ID)
-	data := map[string]interface{}{
-		"ID":       user.ID,
-		"Username": user.Username,
-		"Email":    user.Email,
-		"Password": repo.EncryptPassword(user.Password),
-		"Name":     user.Name,
-		"Address":  user.Address,
-		"IsActive": user.IsActive,
-	}
+	user.Password = repo.EncryptPassword(user.Password)
+	data := user.FormingData()
 	if _, e := r.client.HMSet(key, data).Result(); e != nil {
 		return errors.Wrap(e, "repository.User.Store")
 	}
@@ -103,15 +82,7 @@ func (r *userRedisRepository) Store(user *m.User) error {
 }
 func (r *userRedisRepository) Update(user *m.User) error {
 	key := generateKey(user.ID)
-	data := map[string]interface{}{
-		"ID":       user.ID,
-		"Username": user.Username,
-		"Email":    user.Email,
-		"Password": user.Password,
-		"Name":     user.Name,
-		"Address":  user.Address,
-		"IsActive": user.IsActive,
-	}
+	data := user.FormingData()
 	if _, e := r.client.HMSet(key, data).Result(); e != nil {
 		return errors.Wrap(e, "repository.User.Update")
 	}
