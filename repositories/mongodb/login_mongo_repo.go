@@ -2,9 +2,6 @@ package mongo
 
 import (
 	"context"
-	"crypto/md5"
-	"fmt"
-	"io"
 	"time"
 
 	"github.com/rinosukmandityo/hexagonal-login/helper"
@@ -64,13 +61,9 @@ func (r *loginMongoRepository) Authenticate(username, password string) (bool, *m
 		}
 		return false, user, errors.Wrap(e, "repository.Login.Authenticate")
 	}
-	tPass := md5.New()
-	io.WriteString(tPass, password)
-
-	ePassword := fmt.Sprintf("%x", tPass.Sum(nil))
-
-	if ePassword != user.Password {
+	if !repo.IsPasswordMatch(password, user.Password) {
 		return false, user, errors.Wrap(errors.New("Password is incorrect"), "repository.Login.Authenticate")
 	}
+
 	return true, user, nil
 }

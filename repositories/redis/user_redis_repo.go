@@ -86,7 +86,7 @@ func (r *userRedisRepository) Store(user *m.User) error {
 		"ID":       user.ID,
 		"Username": user.Username,
 		"Email":    user.Email,
-		"Password": user.Password,
+		"Password": repo.EncryptPassword(user.Password),
 		"Name":     user.Name,
 		"Address":  user.Address,
 		"IsActive": user.IsActive,

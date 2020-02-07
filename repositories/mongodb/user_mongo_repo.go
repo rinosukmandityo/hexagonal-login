@@ -93,6 +93,7 @@ func (r *userMongoRepository) Store(user *m.User) error {
 	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
 	defer cancel()
 	c := r.client.Database(r.database).Collection(new(m.User).TableName())
+	user.Password = repo.EncryptPassword(user.Password)
 	if _, e := c.InsertOne(ctx, user); e != nil {
 		return errors.Wrap(e, "repository.User.Store")
 	}
