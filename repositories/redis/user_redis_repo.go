@@ -1,7 +1,6 @@
 package redis
 
 import (
-	"fmt"
 	"strconv"
 
 	"github.com/rinosukmandityo/hexagonal-login/helper"
@@ -38,14 +37,6 @@ func NewUserRedisRepository(redisURL string) (repo.UserRepository, error) {
 	return repo, nil
 }
 
-func (r *userRedisRepository) generateKey(code string) string {
-	return fmt.Sprintf("login<>%s", code)
-}
-
-func (r *userRedisRepository) generateUsernameKey(code string) string {
-	return fmt.Sprintf("login<>username<>%s", code)
-}
-
 func (r *userRedisRepository) GetAll() ([]m.User, error) {
 	res := []m.User{}
 	return res, nil
@@ -53,10 +44,10 @@ func (r *userRedisRepository) GetAll() ([]m.User, error) {
 
 func (r *userRedisRepository) GetById(id string) (*m.User, error) {
 	user := new(m.User)
-	key := r.generateKey(id)
+	key := generateKey(id)
 	data, e := r.client.HGetAll(key).Result()
 	if e != nil {
-		return user, errors.Wrap(e, "repository.Redis.GetById")
+		return user, errors.Wrap(e, "repository.User.GetById")
 	}
 	if len(data) == 0 {
 		return nil, errors.Wrap(helper.ErrUserNotFound, "repository.User.GetById")
@@ -72,10 +63,10 @@ func (r *userRedisRepository) GetById(id string) (*m.User, error) {
 }
 func (r *userRedisRepository) GetByUsername(username string) (bool, *m.User, error) {
 	user := new(m.User)
-	key := r.generateUsernameKey(username)
+	key := generateUsernameKey(username)
 	data, e := r.client.HGetAll(key).Result()
 	if e != nil {
-		return false, user, errors.Wrap(e, "repository.Redis.GetById")
+		return false, user, errors.Wrap(e, "repository.User.GetById")
 	}
 	if len(data) == 0 {
 		return false, nil, errors.Wrap(helper.ErrUserNotFound, "repository.User.GetById")
@@ -90,7 +81,7 @@ func (r *userRedisRepository) GetByUsername(username string) (bool, *m.User, err
 	return true, user, nil
 }
 func (r *userRedisRepository) Store(user *m.User) error {
-	key := r.generateKey(user.ID)
+	key := generateKey(user.ID)
 	data := map[string]interface{}{
 		"ID":       user.ID,
 		"Username": user.Username,
@@ -103,7 +94,7 @@ func (r *userRedisRepository) Store(user *m.User) error {
 	if _, e := r.client.HMSet(key, data).Result(); e != nil {
 		return errors.Wrap(e, "repository.User.Store")
 	}
-	keyUsername := r.generateUsernameKey((user.Username))
+	keyUsername := generateUsernameKey((user.Username))
 	if _, e := r.client.HMSet(keyUsername, data).Result(); e != nil {
 		return errors.Wrap(e, "repository.User.Store")
 	}
@@ -111,7 +102,7 @@ func (r *userRedisRepository) Store(user *m.User) error {
 
 }
 func (r *userRedisRepository) Update(user *m.User) error {
-	key := r.generateKey(user.ID)
+	key := generateKey(user.ID)
 	data := map[string]interface{}{
 		"ID":       user.ID,
 		"Username": user.Username,
@@ -124,7 +115,7 @@ func (r *userRedisRepository) Update(user *m.User) error {
 	if _, e := r.client.HMSet(key, data).Result(); e != nil {
 		return errors.Wrap(e, "repository.User.Update")
 	}
-	keyUsername := r.generateUsernameKey((user.Username))
+	keyUsername := generateUsernameKey((user.Username))
 	if _, e := r.client.HMSet(keyUsername, data).Result(); e != nil {
 		return errors.Wrap(e, "repository.User.Update")
 	}
@@ -132,11 +123,11 @@ func (r *userRedisRepository) Update(user *m.User) error {
 
 }
 func (r *userRedisRepository) Delete(user *m.User) error {
-	key := r.generateKey(user.ID)
+	key := generateKey(user.ID)
 	if _, e := r.client.HDel(key).Result(); e != nil {
 		return errors.Wrap(e, "repository.User.Delete")
 	}
-	keyUsername := r.generateUsernameKey(user.Username)
+	keyUsername := generateUsernameKey(user.Username)
 	if _, e := r.client.HDel(keyUsername).Result(); e != nil {
 		return errors.Wrap(e, "repository.User.Delete")
 	}
