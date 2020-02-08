@@ -1,38 +1,31 @@
-// +build login_service
+// +build login_http
 
-package services_test
+package api_test
 
 import (
+	"bytes"
+	"errors"
+	"io"
+	"io/ioutil"
+	"net/http"
+	"net/http/httptest"
 	"sync"
 	"testing"
 
-	_ "github.com/rinosukmandityo/hexagonal-login/api"
+	. "github.com/rinosukmandityo/hexagonal-login/api"
 	"github.com/rinosukmandityo/hexagonal-login/logic"
 	m "github.com/rinosukmandityo/hexagonal-login/models"
+	repo "github.com/rinosukmandityo/hexagonal-login/repositories"
 	rh "github.com/rinosukmandityo/hexagonal-login/repositories/helper"
-	. "github.com/rinosukmandityo/hexagonal-login/services"
+
+	"github.com/go-chi/chi"
 )
 
 /*
 	==================
 	RUN FROM TERMINAL
 	==================
-	go test -v -tags=login_service
-
-	===================================
-	TO SET DATABASE INFO FROM TERMINAL
-	===================================
-	set mongo_url=mongodb://localhost:27017/local
-	set mongo_timeout=10
-	set mongo_db=local
-	set url_db=mongo
-*/
-
-/*
-	==================
-	RUN FROM TERMINAL
-	==================
-	go test -v -tags=login_service
+	go test -v -tags=login_http
 
 	===================================
 	TO SET DATABASE INFO FROM TERMINAL
@@ -44,8 +37,9 @@ import (
 */
 
 var (
-	userService  UserService
-	loginService LoginService
+	userRepo repo.LoginRepository
+	r        *chi.Mux
+	ts       *httptest.Server
 )
 
 func UserTestData() []m.User {
@@ -74,20 +68,67 @@ func UserTestData() []m.User {
 		Address:  "User Address 03",
 		IsActive: false,
 	}}
+
 }
 
 func init() {
-	loginRepo := rh.ChooseRepo()
-	userService = logic.NewUserService(loginRepo)
-	loginService = logic.NewLoginService(loginRepo)
+	userRepo = rh.ChooseRepo()
+	r = RegisterHandler()
 }
 
-func TestUserService(t *testing.T) {
+func TestUserHTTP(t *testing.T) {
+	ts = httptest.NewServer(r)
+	defer ts.Close()
+
 	t.Run("Insert User", InsertUser)
 	t.Run("Authenticate User", AuthenticateUser)
 }
 
+func readUserData(resp *http.Response) (*m.User, error) {
+	body, e := ioutil.ReadAll(resp.Body)
+	if e != nil {
+		return nil, e
+	}
+	defer resp.Body.Close()
+	user, _ := GetSerializer(ContentTypeJson).Decode(body)
+	return user, nil
+}
+
+func PostData(t *testing.T, ts *httptest.Server, url string, _data m.User) error {
+	dataBytes, e := getBytes(_data)
+	if e != nil {
+		return e
+	}
+	resp, _, e := makeRequest(t, ts, "POST", url, bytes.NewReader(dataBytes))
+	if e != nil {
+		return e
+	}
+
+	switch url {
+	case "/":
+		if resp.StatusCode != http.StatusCreated {
+			return errors.New("status should be 'Status Created' (201)")
+		}
+	default:
+		if resp.StatusCode != http.StatusOK {
+			return errors.New("status should be 'Status OK' (200)")
+		}
+	}
+
+	return nil
+}
+
+func getBytes(_data m.User) ([]byte, error) {
+	dataBytes, e := GetSerializer(ContentTypeJson).Encode(&_data)
+	if e != nil {
+		return dataBytes, e
+	}
+	return dataBytes, nil
+}
+
 func InsertUser(t *testing.T) {
+	userService := logic.NewUserService(userRepo)
+
 	testdata := UserTestData()
 	wg := sync.WaitGroup{}
 
@@ -127,28 +168,61 @@ func AuthenticateUser(t *testing.T) {
 	t.Run("Case 1: Authenticate user", func(t *testing.T) {
 		t.Run("Case 1.1: Authenticate with user name", func(t *testing.T) {
 			_data := testdata[0]
-			if _, _, e := loginService.Authenticate(_data.Username, _data.Password); e != nil {
+			_data.Email = ""
+			if e := PostData(t, ts, "/auth", _data); e != nil {
 				t.Errorf("[ERROR] - Failed to authenticate user %s ", e.Error())
 			}
 		})
 		t.Run("Case 1.2: Authenticate with email address", func(t *testing.T) {
 			_data := testdata[0]
-			if _, _, e := loginService.Authenticate(_data.Email, _data.Password); e != nil {
+			_data.Username = ""
+			if e := PostData(t, ts, "/auth", _data); e != nil {
 				t.Errorf("[ERROR] - Failed to authenticate user %s ", e.Error())
 			}
 		})
 	})
 	t.Run("Case 2: Negative Test", func(t *testing.T) {
 		t.Run("Case 2.1: Username does not exists", func(t *testing.T) {
-			if _, _, e := loginService.Authenticate("USERNAME DOES NOT EXISTS", ""); e == nil {
+			_data := testdata[0]
+			_data.Username = "USERNAME DOES NOT EXISTS"
+			_data.Email = "EMAIL DOES NOT EXISTS"
+			if e := PostData(t, ts, "/auth", _data); e == nil {
 				t.Error("[ERROR] - It should be error 'User Not Found'")
 			}
 		})
 		t.Run("Case 2.2: Password does not match", func(t *testing.T) {
 			_data := testdata[0]
-			if _, _, e := loginService.Authenticate(_data.Username, "PASSWORD DOES NOT MATCH"); e == nil {
+			_data.Password = "PASSWORD DOES NOT MATCH"
+			if e := PostData(t, ts, "/auth", _data); e == nil {
 				t.Error("[ERROR] - It should be error 'Password does not match'")
 			}
 		})
 	})
+}
+
+func makeRequest(t *testing.T, ts *httptest.Server, method, path string, body io.Reader) (*http.Response, string, error) {
+	req, e := http.NewRequest(method, ts.URL+path, body)
+	if e != nil {
+		return nil, "", e
+	}
+	req.Header.Set("Content-Type", ContentTypeJson)
+
+	var resp *http.Response
+	switch method {
+	case "GET":
+		resp, e = http.DefaultTransport.RoundTrip(req)
+	default:
+		resp, e = http.DefaultClient.Do(req)
+	}
+	if e != nil {
+		return nil, "", e
+	}
+
+	respBody, e := ioutil.ReadAll(resp.Body)
+	if e != nil {
+		return nil, "", e
+	}
+	defer resp.Body.Close()
+
+	return resp, string(respBody), nil
 }

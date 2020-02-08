@@ -75,9 +75,7 @@ func UserTestData() []m.User {
 
 func init() {
 	userRepo = rh.ChooseRepo()
-	userService := logic.NewUserService(userRepo)
-	handler := NewUserHandler(userService)
-	r = RegisterHandler(handler)
+	r = RegisterHandler()
 }
 
 func TestUserHTTP(t *testing.T) {

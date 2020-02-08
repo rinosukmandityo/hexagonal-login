@@ -3,19 +3,32 @@ package api
 import (
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
+
+	"github.com/rinosukmandityo/hexagonal-login/logic"
+	rh "github.com/rinosukmandityo/hexagonal-login/repositories/helper"
 )
 
-func RegisterHandler(handler UserHandler) *chi.Mux {
+func RegisterHandler() *chi.Mux {
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
-	// r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
+	webRepo := rh.ChooseRepo()
+
+	registerUserHandler(r, NewUserHandler(logic.NewUserService(webRepo)))
+	registerLoginHandler(r, NewLoginHandler(logic.NewLoginService(webRepo)))
+
+	return r
+}
+
+func registerUserHandler(r *chi.Mux, handler UserHandler) {
 	r.Get("/{id}", handler.Get)
 	r.Post("/", handler.Post)
 	r.Post("/update", handler.Update)
 	r.Post("/delete", handler.Delete)
+}
 
-	return r
+func registerLoginHandler(r *chi.Mux, handler LoginHandler) {
+	r.Post("/auth", handler.Auth)
 }
