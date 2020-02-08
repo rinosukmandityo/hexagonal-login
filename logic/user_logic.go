@@ -12,21 +12,39 @@ import (
 )
 
 type userService struct {
-	userRepo repo.UserRepository
+	userRepo repo.LoginRepository
 }
 
-func NewUserService(userRepo repo.UserRepository) svc.UserService {
+func NewUserService(userRepo repo.LoginRepository) svc.UserService {
 	return &userService{
 		userRepo,
 	}
 }
 
 func (u *userService) GetAll() ([]m.User, error) {
-	return u.userRepo.GetAll()
+	res := []m.User{}
+	param := repo.GetAllParam{
+		Tablename: new(m.User).TableName(),
+		Result:    &res,
+	}
+	if e := u.userRepo.GetAll(param); e != nil {
+		return res, e
+	}
+	return res, nil
 }
 
 func (u *userService) GetById(id string) (*m.User, error) {
-	return u.userRepo.GetById(id)
+	res := new(m.User)
+	param := repo.GetParam{
+		Tablename: res.TableName(),
+		Filter:    map[string]interface{}{"_id": id},
+		Result:    res,
+	}
+	if e := u.userRepo.GetBy(param); e != nil {
+		return res, e
+	}
+
+	return res, nil
 
 }
 func (u *userService) Store(user *m.User) error {
@@ -36,10 +54,15 @@ func (u *userService) Store(user *m.User) error {
 	if user.ID == "" {
 		user.ID = shortid.MustGenerate()
 	}
-	if isFound, _, _ := u.userRepo.GetByUsername(user.Username); isFound {
+	if isFound, _, _ := u.GetByUsername(user.Username); isFound {
 		return errs.Wrap(helper.ErrUserNameDuplicate, "service.User.Store")
 	}
-	return u.userRepo.Store(user)
+	user.Password = repo.EncryptPassword(user.Password)
+	param := repo.StoreParam{
+		Tablename: user.TableName(),
+		Data:      user,
+	}
+	return u.userRepo.Store(param)
 
 }
 func (u *userService) Update(user *m.User) error {
@@ -49,16 +72,39 @@ func (u *userService) Update(user *m.User) error {
 	if user.ID == "" {
 		user.ID = shortid.MustGenerate()
 	}
-	return u.userRepo.Update(user)
+	param := repo.UpdateParam{
+		Tablename: user.TableName(),
+		Filter:    map[string]interface{}{"_id": user.ID},
+		Data:      user,
+	}
+	return u.userRepo.Update(param)
 
 }
 func (u *userService) Delete(user *m.User) error {
 	if user.ID == "" {
 		return errs.Wrap(helper.ErrUserNotFound, "service.User.Delete")
 	}
-	if e := u.userRepo.Delete(user); e != nil {
+	param := repo.DeleteParam{
+		Tablename: user.TableName(),
+		Filter:    map[string]interface{}{"_id": user.ID},
+	}
+	if e := u.userRepo.Delete(param); e != nil {
 		return e
 	}
 	return nil
 
+}
+
+func (u *userService) GetByUsername(username string) (bool, *m.User, error) {
+	res := new(m.User)
+	param := repo.GetParam{
+		Tablename: res.TableName(),
+		Filter:    map[string]interface{}{"Username": username},
+		Result:    res,
+	}
+	if e := u.userRepo.GetBy(param); e != nil {
+		return false, res, e
+	}
+
+	return true, res, nil
 }

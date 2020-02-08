@@ -2,14 +2,13 @@ package mongo
 
 import (
 	"context"
+	"gopkg.in/mgo.v2/bson"
 	"time"
 
 	"github.com/rinosukmandityo/hexagonal-login/helper"
-	m "github.com/rinosukmandityo/hexagonal-login/models"
 	repo "github.com/rinosukmandityo/hexagonal-login/repositories"
 
 	"github.com/pkg/errors"
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
@@ -34,7 +33,7 @@ func newUserMongoClient(mongoURL string, mongoTimeout int) (*mongo.Client, error
 	return client, e
 }
 
-func NewUserMongoRepository(mongoURL, mongoDB string, mongoTimeout int) (repo.UserRepository, error) {
+func NewUserMongoRepository(mongoURL, mongoDB string, mongoTimeout int) (repo.LoginRepository, error) {
 	repo := &userMongoRepository{
 		timeout:  time.Duration(mongoTimeout) * time.Second,
 		database: mongoDB,
@@ -47,65 +46,48 @@ func NewUserMongoRepository(mongoURL, mongoDB string, mongoTimeout int) (repo.Us
 	return repo, nil
 }
 
-func (r *userMongoRepository) GetAll() ([]m.User, error) {
+func (r *userMongoRepository) GetAll(param repo.GetAllParam) error {
 	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
 	defer cancel()
-	res := []m.User{}
-	c := r.client.Database(r.database).Collection(new(m.User).TableName())
+	c := r.client.Database(r.database).Collection(param.Tablename)
 	csr, e := c.Find(ctx, nil)
 	if e != nil {
-		return res, e
+		return e
 	}
-	if e := csr.Decode(&res); e != nil {
-		return res, e
+	if e := csr.Decode(&param.Result); e != nil {
+		return e
 	}
-	return res, nil
+	return nil
 }
-func (r *userMongoRepository) GetById(id string) (*m.User, error) {
+func (r *userMongoRepository) GetBy(param repo.GetParam) error {
 	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
 	defer cancel()
-	user := new(m.User)
-	c := r.client.Database(r.database).Collection(user.TableName())
-	if e := c.FindOne(ctx, bson.M{"_id": id}).Decode(user); e != nil {
+	c := r.client.Database(r.database).Collection(param.Tablename)
+	if e := c.FindOne(ctx, param.Filter).Decode(param.Result); e != nil {
 		if e == mongo.ErrNoDocuments {
-			return nil, errors.Wrap(helper.ErrUserNotFound, "repository.User.GetById")
+			return errors.Wrap(helper.ErrUserNotFound, "repository.User.GetById")
 		}
-		return user, errors.Wrap(e, "repository.User.GetById")
+		return errors.Wrap(e, "repository.User.GetById")
 	}
-	return user, nil
+	return nil
 
 }
-func (r *userMongoRepository) GetByUsername(username string) (bool, *m.User, error) {
+func (r *userMongoRepository) Store(param repo.StoreParam) error {
 	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
 	defer cancel()
-	user := new(m.User)
-	c := r.client.Database(r.database).Collection(user.TableName())
-	if e := c.FindOne(ctx, bson.M{"Username": username}).Decode(user); e != nil {
-		if e == mongo.ErrNoDocuments {
-			return false, nil, errors.Wrap(helper.ErrUserNotFound, "repository.User.GetById")
-		}
-		return false, user, errors.Wrap(e, "repository.User.GetById")
-	}
-	return true, user, nil
-
-}
-func (r *userMongoRepository) Store(user *m.User) error {
-	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
-	defer cancel()
-	c := r.client.Database(r.database).Collection(new(m.User).TableName())
-	user.Password = repo.EncryptPassword(user.Password)
-	if _, e := c.InsertOne(ctx, user); e != nil {
+	c := r.client.Database(r.database).Collection(param.Tablename)
+	if _, e := c.InsertOne(ctx, param.Data); e != nil {
 		return errors.Wrap(e, "repository.User.Store")
 	}
 
 	return nil
 
 }
-func (r *userMongoRepository) Update(user *m.User) error {
+func (r *userMongoRepository) Update(param repo.UpdateParam) error {
 	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
 	defer cancel()
-	c := r.client.Database(r.database).Collection(new(m.User).TableName())
-	if res, e := c.UpdateOne(ctx, bson.M{"_id": user.ID}, bson.M{"$set": bson.M{"Username": user.Username}}, options.Update().SetUpsert(false)); e != nil {
+	c := r.client.Database(r.database).Collection(param.Tablename)
+	if res, e := c.UpdateOne(ctx, param.Filter, bson.M{"$set": param.Data}, options.Update().SetUpsert(false)); e != nil {
 		return errors.Wrap(e, "repository.User.Update")
 	} else {
 		if res.MatchedCount == 0 && res.ModifiedCount == 0 {
@@ -116,11 +98,11 @@ func (r *userMongoRepository) Update(user *m.User) error {
 	return nil
 
 }
-func (r *userMongoRepository) Delete(user *m.User) error {
+func (r *userMongoRepository) Delete(param repo.DeleteParam) error {
 	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
 	defer cancel()
-	c := r.client.Database(r.database).Collection(new(m.User).TableName())
-	if res, e := c.DeleteOne(ctx, bson.M{"_id": user.ID}); e != nil {
+	c := r.client.Database(r.database).Collection(param.Tablename)
+	if res, e := c.DeleteOne(ctx, param.Filter); e != nil {
 		return errors.Wrap(e, "repository.User.Delete")
 	} else {
 		if res.DeletedCount == 0 {

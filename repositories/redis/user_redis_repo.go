@@ -2,7 +2,6 @@ package redis
 
 import (
 	"github.com/rinosukmandityo/hexagonal-login/helper"
-	m "github.com/rinosukmandityo/hexagonal-login/models"
 	repo "github.com/rinosukmandityo/hexagonal-login/repositories"
 
 	"github.com/go-redis/redis"
@@ -25,7 +24,7 @@ func newUserRedisClient(redisURL string) (*redis.Client, error) {
 	return client, e
 }
 
-func NewUserRedisRepository(redisURL string) (repo.UserRepository, error) {
+func NewUserRedisRepository(redisURL string) (repo.LoginRepository, error) {
 	repo := &userRedisRepository{}
 	client, e := newUserRedisClient(redisURL)
 	if e != nil {
@@ -35,73 +34,57 @@ func NewUserRedisRepository(redisURL string) (repo.UserRepository, error) {
 	return repo, nil
 }
 
-func (r *userRedisRepository) GetAll() ([]m.User, error) {
-	res := []m.User{}
-	return res, nil
+func (r *userRedisRepository) GetAll(param repo.GetAllParam) error {
+	return nil
 }
 
-func (r *userRedisRepository) GetById(id string) (*m.User, error) {
-	user := new(m.User)
-	key := generateKey(id)
+func (r *userRedisRepository) GetBy(param repo.GetParam) error {
+	key := generateKey(param.Filter["_id"].(string))
 	data, e := r.client.HGetAll(key).Result()
 	if e != nil {
-		return user, errors.Wrap(e, "repository.User.GetById")
+		return errors.Wrap(e, "repository.User.GetById")
 	}
 	if len(data) == 0 {
-		return nil, errors.Wrap(helper.ErrUserNotFound, "repository.User.GetById")
+		return errors.Wrap(helper.ErrUserNotFound, "repository.User.GetById")
 	}
-	user.FormingUserData(data)
-	return user, nil
+	// user = FormingData(data)
+	return nil
 }
-func (r *userRedisRepository) GetByUsername(username string) (bool, *m.User, error) {
-	user := new(m.User)
-	key := generateUsernameKey(username)
-	data, e := r.client.HGetAll(key).Result()
-	if e != nil {
-		return false, user, errors.Wrap(e, "repository.User.GetById")
-	}
-	if len(data) == 0 {
-		return false, nil, errors.Wrap(helper.ErrUserNotFound, "repository.User.GetById")
-	}
-	user.FormingUserData(data)
-	return true, user, nil
-}
-func (r *userRedisRepository) Store(user *m.User) error {
-	key := generateKey(user.ID)
-	user.Password = repo.EncryptPassword(user.Password)
-	data := user.FormingData()
+func (r *userRedisRepository) Store(param repo.StoreParam) error {
+	data := param.Data.(map[string]interface{})
+	key := generateKey(data["_id"].(string))
 	if _, e := r.client.HMSet(key, data).Result(); e != nil {
 		return errors.Wrap(e, "repository.User.Store")
 	}
-	keyUsername := generateUsernameKey((user.Username))
-	if _, e := r.client.HMSet(keyUsername, data).Result(); e != nil {
-		return errors.Wrap(e, "repository.User.Store")
-	}
+	// keyUsername := generateUsernameKey((user.Username))
+	// if _, e := r.client.HMSet(keyUsername, data).Result(); e != nil {
+	// 	return errors.Wrap(e, "repository.User.Store")
+	// }
 	return nil
 
 }
-func (r *userRedisRepository) Update(user *m.User) error {
-	key := generateKey(user.ID)
-	data := user.FormingData()
+func (r *userRedisRepository) Update(param repo.UpdateParam) error {
+	data := param.Data.(map[string]interface{})
+	key := generateKey(data["_id"].(string))
 	if _, e := r.client.HMSet(key, data).Result(); e != nil {
 		return errors.Wrap(e, "repository.User.Update")
 	}
-	keyUsername := generateUsernameKey((user.Username))
+	keyUsername := generateUsernameKey(data["Username"].(string))
 	if _, e := r.client.HMSet(keyUsername, data).Result(); e != nil {
 		return errors.Wrap(e, "repository.User.Update")
 	}
 	return nil
 
 }
-func (r *userRedisRepository) Delete(user *m.User) error {
-	key := generateKey(user.ID)
+func (r *userRedisRepository) Delete(param repo.DeleteParam) error {
+	key := generateKey(param.Filter["_id"].(string))
 	if _, e := r.client.HDel(key).Result(); e != nil {
 		return errors.Wrap(e, "repository.User.Delete")
 	}
-	keyUsername := generateUsernameKey(user.Username)
-	if _, e := r.client.HDel(keyUsername).Result(); e != nil {
-		return errors.Wrap(e, "repository.User.Delete")
-	}
+	// keyUsername := generateUsernameKey(user.Username)
+	// if _, e := r.client.HDel(keyUsername).Result(); e != nil {
+	// 	return errors.Wrap(e, "repository.User.Delete")
+	// }
 
 	return nil
 

@@ -39,7 +39,7 @@ import (
 */
 
 var (
-	userRepo repo.UserRepository
+	userRepo repo.LoginRepository
 	r        *chi.Mux
 	ts       *httptest.Server
 )
