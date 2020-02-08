@@ -27,8 +27,24 @@ import (
 	set url_db=mongo
 */
 
+/*
+	==================
+	RUN FROM TERMINAL
+	==================
+	go test -v -tags=login_service
+
+	===================================
+	TO SET DATABASE INFO FROM TERMINAL
+	===================================
+	set mongo_url=mongodb://localhost:27017/local
+	set mongo_timeout=10
+	set mongo_db=local
+	set url_db=mongo
+*/
+
 var (
-	userService UserService
+	userService  UserService
+	loginService LoginService
 )
 
 func UserTestData() []m.User {
@@ -40,13 +56,29 @@ func UserTestData() []m.User {
 		Email:    "usermail01@gmail.com",
 		Address:  "User Address 01",
 		IsActive: false,
+	}, {
+		Name:     "User 02",
+		Username: "username02",
+		ID:       "userid02",
+		Password: "Password.1",
+		Email:    "usermail02@gmail.com",
+		Address:  "User Address 02",
+		IsActive: false,
+	}, {
+		Name:     "User 03",
+		ID:       "userid03",
+		Password: "Password.1",
+		Username: "username03",
+		Email:    "usermail03@gmail.com",
+		Address:  "User Address 03",
+		IsActive: false,
 	}}
-
 }
 
 func init() {
-	userRepo := rh.ChooseRepo()
-	userService = logic.NewUserService(userRepo)
+	loginRepo := rh.ChooseRepo()
+	userService = logic.NewUserService(loginRepo)
+	loginService = logic.NewLoginService(loginRepo)
 }
 
 func TestUserService(t *testing.T) {
@@ -93,19 +125,20 @@ func AuthenticateUser(t *testing.T) {
 	testdata := UserTestData()
 	t.Run("Case 1: Authenticate user", func(t *testing.T) {
 		_data := testdata[0]
-		if _, e := userService.GetById(_data.ID); e != nil {
+		if _, _, e := loginService.Authenticate(_data.Username, _data.Password); e != nil {
 			t.Errorf("[ERROR] - Failed to authenticate user %s ", e.Error())
 		}
 	})
 	t.Run("Case 2: Negative Test", func(t *testing.T) {
-		t.Run("Case 2.1: Username did not exists", func(t *testing.T) {
-			if _, e := userService.GetById("ID DID NOT EXISTS"); e == nil {
+		t.Run("Case 2.1: Username does not exists", func(t *testing.T) {
+			if _, _, e := loginService.Authenticate("USERNAME DOES NOT EXISTS", ""); e == nil {
 				t.Error("[ERROR] - It should be error 'User Not Found'")
 			}
 		})
-		t.Run("Case 2.2: Password did not match", func(t *testing.T) {
-			if _, e := userService.GetById("ID DID NOT EXISTS"); e == nil {
-				t.Error("[ERROR] - It should be error 'User Not Found'")
+		t.Run("Case 2.2: Password does not match", func(t *testing.T) {
+			_data := testdata[0]
+			if _, _, e := loginService.Authenticate(_data.Username, "PASSWORD DOES NOT MATCH"); e == nil {
+				t.Error("[ERROR] - It should be error 'Password does not match'")
 			}
 		})
 	})
