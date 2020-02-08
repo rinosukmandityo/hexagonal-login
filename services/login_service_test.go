@@ -124,10 +124,18 @@ func InsertUser(t *testing.T) {
 func AuthenticateUser(t *testing.T) {
 	testdata := UserTestData()
 	t.Run("Case 1: Authenticate user", func(t *testing.T) {
-		_data := testdata[0]
-		if _, _, e := loginService.Authenticate(_data.Username, _data.Password); e != nil {
-			t.Errorf("[ERROR] - Failed to authenticate user %s ", e.Error())
-		}
+		t.Run("Case 1.1: Authenticate with user name", func(t *testing.T) {
+			_data := testdata[0]
+			if _, _, e := loginService.Authenticate(_data.Username, _data.Password); e != nil {
+				t.Errorf("[ERROR] - Failed to authenticate user %s ", e.Error())
+			}
+		})
+		t.Run("Case 1.2: Authenticate with email address", func(t *testing.T) {
+			_data := testdata[0]
+			if _, _, e := loginService.Authenticate(_data.Email, _data.Password); e != nil {
+				t.Errorf("[ERROR] - Failed to authenticate user %s ", e.Error())
+			}
+		})
 	})
 	t.Run("Case 2: Negative Test", func(t *testing.T) {
 		t.Run("Case 2.1: Username does not exists", func(t *testing.T) {
