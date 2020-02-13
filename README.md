@@ -8,10 +8,12 @@ This application support 2 kind of database Redis and MongoDB to prove our ports
 By default it will connect into our mongo DB database with default host & port `localhost:27017` and collection `local`  
 To connect into different database we need to set database information in environment variable
 
-`set mongo_url=mongodb://localhost:27017/local`  
-`set mongo_timeout=30`  
-`set mongo_db=local`  
-`set url_db=mongo`  
+```go
+set mongo_url=mongodb://localhost:27017/local  
+set mongo_timeout=30  
+set mongo_db=local  
+set url_db=mongo  
+```
 
 After setting the database information we only need to run the main.go file  
 `go run main.go`  
@@ -19,43 +21,43 @@ After setting the database information we only need to run the main.go file
 #### API List & Payloads
 Here is our API List and its payload:  
 
-1. /{user\_id}  
+1. **/{_user\_id_}**  
 `/userid01`
-2. /  
+2. **/**  
 ```javascript
 {
- Name:     "Name",  
- Username: "username",  
- Password: "Password.User",  
- ID:       "userid01",  
- Email:    "usermail01@gmail.com",  
- Address:  "User Address 01",  
- IsActive: false  
+	Name:     "Name",  
+	Username: "username",  
+	Password: "Password.User",  
+	ID:       "userid01",  
+	Email:    "usermail01@gmail.com",  
+	Address:  "User Address 01",  
+	IsActive: false  
 }
 ```
-3. /update  
+3. **/update**  
 ```javascript
 {
- Name:     "Name",  
- Username: "username",  
- Password: "Password.User",  
- ID:       "userid01",  
- Email:    "usermail01@gmail.com",  
- Address:  "User Address 01",  
- IsActive: false  
+	Name:     "Name",  
+	Username: "username",  
+	Password: "Password.User",  
+	ID:       "userid01",  
+	Email:    "usermail01@gmail.com",  
+	Address:  "User Address 01",  
+	IsActive: false  
 }
 ```
-4. /delete  
+4. **/delete**  
 ```javascript
 {
- ID:       "userid01"  
+	ID:       "userid01"  
 }
 ```
-5. /auth  
+5. **/auth**  
 ```javascript
 {  
- Username: "username",  
- Password: "Password.User"
+	Username: "username",  
+	Password: "Password.User"
 }
 ```
 
@@ -91,3 +93,28 @@ We also can make sure that our _**Domain Logic**_ are testable without any of th
 So we have our service which is a user management and login and it will connect to serializer which will either serialize the data into json or message pack before serving it through REST API  
 And then on the other side we have our repository which will either choose to use MongoDB or Redis based on how we start the application from command line.  
 So basically our API will be able to accept JSON or message pack format and also our repository is able to use both MongoDB and Redis and it won't really affect our service
+
+Project Structure
+---
+By implementing Hexagonal Architecture we also implement Dependency Inversion and Dependency Injection. Here is some explanations about project structure:
+
+1. **api**  
+contains handler for API
+2. **models**  
+contains data models
+3. **repositories**  
+contains interface for repository adapter
+  - **mongodb**  
+contains mongo package that implement LoginRepository interface. This package will store mongo client and connect to mongoDB database to handle database query or command
+ - **redis**  
+contains redis package that implement LoginRepository interface. This package will store redis client and connect to redis server to handle database query or data manipulation
+4. **serializer**  
+contains interface for decode and encode serializer. It will be used in our API to decode and encode data.
+ - **json**  
+implement serializer interface to encode and decode data using json
+ - **msgpack**  
+implement serializer interface to encode and decode data using message pack
+5. **services**  
+contains interface for our domain service and logic 
+6. **logic**  
+implement service interface to handle service logic like constructing repository parameter and calling repository interface to do data manipulation or query
