@@ -103,18 +103,18 @@ contains handler for API
 2. **models**  
 contains data models
 3. **repositories**  
-contains interface for repository adapter
-  - **mongodb**  
-contains mongo package that implement LoginRepository interface. This package will store mongo client and connect to mongoDB database to handle database query or command
- - **redis**  
-contains redis package that implement LoginRepository interface. This package will store redis client and connect to redis server to handle database query or data manipulation
+contains **Port** interface for repository adapter
+   - **mongodb**  
+contains mongo **Adapter** that implement LoginRepository interface. This package will store mongo client and connect to mongoDB database to handle database query or command
+   - **redis**  
+contains redis **Adapter** that implement LoginRepository interface. This package will store redis client and connect to redis server to handle database query or data manipulation
 4. **serializer**  
-contains interface for decode and encode serializer. It will be used in our API to decode and encode data.
- - **json**  
-implement serializer interface to encode and decode data using json
- - **msgpack**  
-implement serializer interface to encode and decode data using message pack
+contains **Port** interface for decode and encode serializer. It will be used in our API to decode and encode data.
+   - **json**  
+contains json **Adapter** that implement serializer interface to encode and decode data
+   - **msgpack**  
+contains message pack **Adapter** that implement serializer interface to encode and decode data
 5. **services**  
-contains interface for our domain service and logic 
+contains **Port** interface for our domain service and logic 
 6. **logic**  
-implement service interface to handle service logic like constructing repository parameter and calling repository interface to do data manipulation or query
+contains service **Adapter** that implement service interface to handle service logic like constructing repository parameter and calling repository interface to do data manipulation or query
