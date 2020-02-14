@@ -28,21 +28,6 @@ import (
 	set url_db=mongo
 */
 
-/*
-	==================
-	RUN FROM TERMINAL
-	==================
-	go test -v -tags=login_service
-
-	===================================
-	TO SET DATABASE INFO FROM TERMINAL
-	===================================
-	set mongo_url=mongodb://localhost:27017/local
-	set mongo_timeout=10
-	set mongo_db=local
-	set url_db=mongo
-*/
-
 var (
 	userService  UserService
 	loginService LoginService
