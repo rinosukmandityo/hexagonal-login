@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/rinosukmandityo/hexagonal-login/helper"
+	m "github.com/rinosukmandityo/hexagonal-login/models"
 	repo "github.com/rinosukmandityo/hexagonal-login/repositories"
 
 	"github.com/pkg/errors"
@@ -33,7 +34,7 @@ func newUserMongoClient(mongoURL string, mongoTimeout int) (*mongo.Client, error
 	return client, e
 }
 
-func NewUserMongoRepository(mongoURL, mongoDB string, mongoTimeout int) (repo.LoginRepository, error) {
+func NewUserMongoRepository(mongoURL, mongoDB string, mongoTimeout int) (repo.UserRepository, error) {
 	repo := &userMongoRepository{
 		timeout:  time.Duration(mongoTimeout) * time.Second,
 		database: mongoDB,
@@ -46,48 +47,50 @@ func NewUserMongoRepository(mongoURL, mongoDB string, mongoTimeout int) (repo.Lo
 	return repo, nil
 }
 
-func (r *userMongoRepository) GetAll(param repo.GetAllParam) error {
+func (r *userMongoRepository) GetAll() ([]m.User, error) {
+	res := []m.User{}
 	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
 	defer cancel()
-	c := r.client.Database(r.database).Collection(param.Tablename)
+	c := r.client.Database(r.database).Collection(new(m.User).TableName())
 	csr, e := c.Find(ctx, nil)
 	if e != nil {
-		return e
+		return res, e
 	}
-	if e := csr.Decode(&param.Result); e != nil {
-		return e
+	if e := csr.Decode(&res); e != nil {
+		return res, e
 	}
-	return nil
+	return res, nil
 }
-func (r *userMongoRepository) GetBy(param repo.GetParam) error {
+func (r *userMongoRepository) GetBy(filter map[string]interface{}) (*m.User, error) {
+	res := new(m.User)
 	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
 	defer cancel()
-	c := r.client.Database(r.database).Collection(param.Tablename)
-	if e := c.FindOne(ctx, param.Filter).Decode(param.Result); e != nil {
+	c := r.client.Database(r.database).Collection(res.TableName())
+	if e := c.FindOne(ctx, filter).Decode(res); e != nil {
 		if e == mongo.ErrNoDocuments {
-			return errors.Wrap(helper.ErrUserNotFound, "repository.User.GetById")
+			return res, errors.Wrap(helper.ErrUserNotFound, "repository.User.GetById")
 		}
-		return errors.Wrap(e, "repository.User.GetById")
+		return res, errors.Wrap(e, "repository.User.GetById")
 	}
-	return nil
+	return res, nil
 
 }
-func (r *userMongoRepository) Store(param repo.StoreParam) error {
+func (r *userMongoRepository) Store(data *m.User) error {
 	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
 	defer cancel()
-	c := r.client.Database(r.database).Collection(param.Tablename)
-	if _, e := c.InsertOne(ctx, param.Data); e != nil {
+	c := r.client.Database(r.database).Collection(data.TableName())
+	if _, e := c.InsertOne(ctx, data); e != nil {
 		return errors.Wrap(e, "repository.User.Store")
 	}
 
 	return nil
 
 }
-func (r *userMongoRepository) Update(param repo.UpdateParam) error {
+func (r *userMongoRepository) Update(data *m.User, filter map[string]interface{}) error {
 	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
 	defer cancel()
-	c := r.client.Database(r.database).Collection(param.Tablename)
-	if res, e := c.UpdateOne(ctx, param.Filter, bson.M{"$set": param.Data}, options.Update().SetUpsert(false)); e != nil {
+	c := r.client.Database(r.database).Collection(data.TableName())
+	if res, e := c.UpdateOne(ctx, filter, bson.M{"$set": data}, options.Update().SetUpsert(false)); e != nil {
 		return errors.Wrap(e, "repository.User.Update")
 	} else {
 		if res.MatchedCount == 0 && res.ModifiedCount == 0 {
@@ -98,11 +101,11 @@ func (r *userMongoRepository) Update(param repo.UpdateParam) error {
 	return nil
 
 }
-func (r *userMongoRepository) Delete(param repo.DeleteParam) error {
+func (r *userMongoRepository) Delete(filter map[string]interface{}) error {
 	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
 	defer cancel()
-	c := r.client.Database(r.database).Collection(param.Tablename)
-	if res, e := c.DeleteOne(ctx, param.Filter); e != nil {
+	c := r.client.Database(r.database).Collection(new(m.User).TableName())
+	if res, e := c.DeleteOne(ctx, filter); e != nil {
 		return errors.Wrap(e, "repository.User.Delete")
 	} else {
 		if res.DeletedCount == 0 {
@@ -111,5 +114,25 @@ func (r *userMongoRepository) Delete(param repo.DeleteParam) error {
 	}
 
 	return nil
+}
 
+func (r *userMongoRepository) Authenticate(username, password string) (bool, *m.User, error) {
+	user := new(m.User)
+	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
+	defer cancel()
+	c := r.client.Database(r.database).Collection(user.TableName())
+	if e := c.FindOne(ctx, map[string]interface{}{"$or": []map[string]interface{}{
+		{"Username": username},
+		{"Email": username},
+	}}).Decode(user); e != nil {
+		if e == mongo.ErrNoDocuments {
+			return false, user, errors.Wrap(helper.ErrUserNotFound, "repository.User.Authenticate")
+		}
+		return false, user, errors.Wrap(e, "repository.User.Authenticate")
+	}
+	if !repo.IsPasswordMatch(password, user.Password) {
+		return false, user, errors.New("Password does not match")
+	}
+
+	return true, user, nil
 }

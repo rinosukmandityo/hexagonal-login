@@ -105,9 +105,9 @@ contains data models
 3. **repositories**  
 contains **Port** interface for repository adapter
    - **mongodb**  
-contains mongo **Adapter** that implement LoginRepository interface. This package will store mongo client and connect to mongoDB database to handle database query or command
+contains mongo **Adapter** that implement UserRepository interface. This package will store mongo client and connect to mongoDB database to handle database query or command
    - **redis**  
-contains redis **Adapter** that implement LoginRepository interface. This package will store redis client and connect to redis server to handle database query or data manipulation
+contains redis **Adapter** that implement UserRepository interface. This package will store redis client and connect to redis server to handle database query or data manipulation
 4. **serializer**  
 contains **Port** interface for decode and encode serializer. It will be used in our API to decode and encode data.
    - **json**  

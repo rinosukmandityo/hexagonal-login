@@ -43,7 +43,7 @@ func (user *User) FormingUserData(data map[string]string) {
 	user.IsActive, _ = strconv.ParseBool(data["IsActive"])
 }
 
-func (user *User) FormingData() map[string]interface{} {
+func (user *User) GetMapFormat() map[string]interface{} {
 	return map[string]interface{}{
 		"ID":       user.ID,
 		"Username": user.Username,

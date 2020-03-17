@@ -10,7 +10,7 @@ import (
 	rr "github.com/rinosukmandityo/hexagonal-login/repositories/redis"
 )
 
-func ChooseRepo() repo.LoginRepository {
+func ChooseRepo() repo.UserRepository {
 	switch os.Getenv("url_db") {
 	case "redis":
 		redisURL := os.Getenv("redis_url")

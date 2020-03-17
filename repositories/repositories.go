@@ -1,36 +1,14 @@
 package repositories
 
-type GetParam struct {
-	Tablename string
-	Filter    map[string]interface{}
-	Result    interface{}
-}
+import (
+	m "github.com/rinosukmandityo/hexagonal-login/models"
+)
 
-type GetAllParam struct {
-	Tablename string
-	Result    interface{}
-}
-
-type StoreParam struct {
-	Tablename string
-	Data      interface{}
-}
-
-type UpdateParam struct {
-	Tablename string
-	Filter    map[string]interface{}
-	Data      interface{}
-}
-
-type DeleteParam struct {
-	Tablename string
-	Filter    map[string]interface{}
-}
-
-type LoginRepository interface {
-	GetAll(param GetAllParam) error
-	GetBy(param GetParam) error
-	Store(param StoreParam) error
-	Update(param UpdateParam) error
-	Delete(param DeleteParam) error
+type UserRepository interface {
+	GetAll() ([]m.User, error)
+	GetBy(filter map[string]interface{}) (*m.User, error)
+	Store(data *m.User) error
+	Update(data *m.User, filter map[string]interface{}) error
+	Delete(filter map[string]interface{}) error
+	Authenticate(username, password string) (bool, *m.User, error)
 }
