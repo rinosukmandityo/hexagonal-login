@@ -25,17 +25,17 @@ import (
 	=======
 	MongoDB
 	=======
-	set mongo_url=mongodb://localhost:27017/local
-	set mongo_timeout=10
-	set mongo_db=local
-	set url_db=mongo
+	set url=mongodb://localhost:27017/local
+	set timeout=10
+	set db=local
+	set driver=mongo
 	=======
 	MySQL
 	=======
-	set mysql_url=root:Password.1@tcp(127.0.0.1:3306)/tes
-	set mysql_timeout=10
-	set mysql_db=tes
-	set url_db=mysql
+	set url=root:Password.1@tcp(127.0.0.1:3306)/tes
+	set timeout=10
+	set db=tes
+	set driver=mysql
 */
 
 var (

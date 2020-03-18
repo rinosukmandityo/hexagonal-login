@@ -11,17 +11,17 @@ import (
 )
 
 func ChooseRepo() repo.UserRepository {
-	switch os.Getenv("url_db") {
+	url := os.Getenv("url")
+	db := os.Getenv("db")
+	timeout, _ := strconv.Atoi(os.Getenv("timeout"))
+	switch os.Getenv("driver") {
 	case "mysql":
-		url := os.Getenv("mysql_url")
 		if url == "" {
 			url = "root:Password.1@tcp(127.0.0.1:3306)/tes"
 		}
-		db := os.Getenv("mysql_db")
 		if db == "" {
 			db = "tes"
 		}
-		timeout, _ := strconv.Atoi(os.Getenv("mysql_timeout"))
 		if timeout == 0 {
 			timeout = 10
 		}
@@ -32,15 +32,12 @@ func ChooseRepo() repo.UserRepository {
 
 		return repo
 	default:
-		url := os.Getenv("mongo_url")
 		if url == "" {
 			url = "mongodb://localhost:27017/local"
 		}
-		db := os.Getenv("mongo_db")
 		if db == "" {
 			db = "local"
 		}
-		timeout, _ := strconv.Atoi(os.Getenv("mongo_timeout"))
 		if timeout == 0 {
 			timeout = 10
 		}

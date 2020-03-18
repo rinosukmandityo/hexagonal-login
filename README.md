@@ -11,19 +11,19 @@ To connect into different database we need to set database information in enviro
 1. MongoDB
 
 ```cli
-set mongo_url=mongodb://localhost:27017/local  
-set mongo_timeout=30  
-set mongo_db=local  
-set url_db=mongo  
+set url=mongodb://localhost:27017/local  
+set timeout=30  
+set db=local  
+set driver=mongo  
 ```
 
 2. MySQL
 
 ```cli
-set mysql_url=root:Password.1@tcp(127.0.0.1:3306)/tes
-set mysql_timeout=10
-set mysql_db=tes
-set url_db=mysql
+set url=root:Password.1@tcp(127.0.0.1:3306)/tes
+set timeout=10
+set db=tes
+set driver=mysql
 ```
 
 After setting the database information we only need to run the main.go file  
