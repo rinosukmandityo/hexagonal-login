@@ -66,11 +66,15 @@ func (r *userMongoRepository) GetBy(filter map[string]interface{}) (*m.User, err
 	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
 	defer cancel()
 	c := r.client.Database(r.database).Collection(res.TableName())
+	if _, ok := filter["ID"]; ok {
+		filter["_id"] = filter["ID"]
+		delete(filter, "ID")
+	}
 	if e := c.FindOne(ctx, filter).Decode(res); e != nil {
 		if e == mongo.ErrNoDocuments {
-			return res, errors.Wrap(helper.ErrUserNotFound, "repository.User.GetById")
+			return res, errors.Wrap(helper.ErrUserNotFound, "repository.User.GetBy")
 		}
-		return res, errors.Wrap(e, "repository.User.GetById")
+		return res, errors.Wrap(e, "repository.User.GetBy")
 	}
 	return res, nil
 
@@ -86,10 +90,11 @@ func (r *userMongoRepository) Store(data *m.User) error {
 	return nil
 
 }
-func (r *userMongoRepository) Update(data *m.User, filter map[string]interface{}) error {
+func (r *userMongoRepository) Update(data *m.User) error {
 	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
 	defer cancel()
 	c := r.client.Database(r.database).Collection(data.TableName())
+	filter := map[string]interface{}{"_id": data.ID}
 	if res, e := c.UpdateOne(ctx, filter, bson.M{"$set": data}, options.Update().SetUpsert(false)); e != nil {
 		return errors.Wrap(e, "repository.User.Update")
 	} else {
@@ -101,9 +106,10 @@ func (r *userMongoRepository) Update(data *m.User, filter map[string]interface{}
 	return nil
 
 }
-func (r *userMongoRepository) Delete(filter map[string]interface{}) error {
+func (r *userMongoRepository) Delete(data *m.User) error {
 	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
 	defer cancel()
+	filter := map[string]interface{}{"_id": data.ID}
 	c := r.client.Database(r.database).Collection(new(m.User).TableName())
 	if res, e := c.DeleteOne(ctx, filter); e != nil {
 		return errors.Wrap(e, "repository.User.Delete")

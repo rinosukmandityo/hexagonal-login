@@ -3,8 +3,10 @@
 package services_test
 
 import (
+	"fmt"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/rinosukmandityo/hexagonal-login/logic"
 	m "github.com/rinosukmandityo/hexagonal-login/models"
@@ -21,10 +23,20 @@ import (
 	===================================
 	TO SET DATABASE INFO FROM TERMINAL
 	===================================
+	=======
+	MongoDB
+	=======
 	set mongo_url=mongodb://localhost:27017/local
 	set mongo_timeout=10
 	set mongo_db=local
 	set url_db=mongo
+	=======
+	MySQL
+	=======
+	set mysql_url=root:Password.1@tcp(127.0.0.1:3306)/tes
+	set mysql_timeout=10
+	set mysql_db=tes
+	set url_db=mysql
 */
 
 var (
@@ -66,6 +78,7 @@ func init() {
 }
 
 func TestUserService(t *testing.T) {
+	// t.Run("Delete All", DeleteAll)
 	t.Run("Insert User", InsertUser)
 	t.Run("Update User", UpdateUser)
 	t.Run("Delete User", DeleteUser)
@@ -85,6 +98,7 @@ func InsertUser(t *testing.T) {
 		}(data)
 	}
 	wg.Wait()
+	time.Sleep(time.Second * 1)
 
 	t.Run("Case 1: Save data", func(t *testing.T) {
 		for _, data := range testdata {
@@ -98,6 +112,7 @@ func InsertUser(t *testing.T) {
 		}
 		wg.Wait()
 
+		time.Sleep(time.Second * 1)
 		for _, data := range testdata {
 			res, e := userService.GetById(data.ID)
 			if e != nil || res.ID == "" {
@@ -171,4 +186,12 @@ func GetUser(t *testing.T) {
 			t.Error("[ERROR] - It should be error 'User Not Found'")
 		}
 	})
+}
+
+func DeleteAll(t *testing.T) {
+	for i := 1; i <= 4; i++ {
+		data := UserTestData()[0]
+		data.ID = fmt.Sprintf("userid0%d", i)
+		userService.Delete(&data)
+	}
 }

@@ -4,15 +4,26 @@ Sample of hexagonal architecture to handle login logic and user CRUD
 How to run
 ---
 #### Set Environment Variable
-This application support 2 kind of database Redis and MongoDB to prove our ports is completely agnostic from the implementation.  
+This application support 2 kind of database MySQL and MongoDB to prove our ports is completely agnostic from the implementation.  
 By default it will connect into our mongo DB database with default host & port `localhost:27017` and collection `local`  
-To connect into different database we need to set database information in environment variable
+To connect into different database we need to set database information in environment variable  
 
-```go
+1. MongoDB
+
+```cli
 set mongo_url=mongodb://localhost:27017/local  
 set mongo_timeout=30  
 set mongo_db=local  
 set url_db=mongo  
+```
+
+2. MySQL
+
+```cli
+set mysql_url=root:Password.1@tcp(127.0.0.1:3306)/tes
+set mysql_timeout=10
+set mysql_db=tes
+set url_db=mysql
 ```
 
 After setting the database information we only need to run the main.go file  
@@ -91,8 +102,8 @@ We also can make sure that our _**Domain Logic**_ are testable without any of th
 #### The service that we are going to build  
 
 So we have our service which is a user management and login and it will connect to serializer which will either serialize the data into json or message pack before serving it through REST API  
-And then on the other side we have our repository which will either choose to use MongoDB or Redis based on how we start the application from command line.  
-So basically our API will be able to accept JSON or message pack format and also our repository is able to use both MongoDB and Redis and it won't really affect our service
+And then on the other side we have our repository which will either choose to use MongoDB or MySQL based on how we start the application from command line.  
+So basically our API will be able to accept JSON or message pack format and also our repository is able to use both MongoDB and MySQL and it won't really affect our service
 
 Project Structure
 ---
@@ -106,8 +117,8 @@ contains data models
 contains **Port** interface for repository adapter
    - **mongodb**  
 contains mongo **Adapter** that implement UserRepository interface. This package will store mongo client and connect to mongoDB database to handle database query or command
-   - **redis**  
-contains redis **Adapter** that implement UserRepository interface. This package will store redis client and connect to redis server to handle database query or data manipulation
+   - **mysql**  
+contains MySQL **Adapter** that implement UserRepository interface. This package will store MySQL client and connect to MySQL server to handle database query or data manipulation
 4. **serializer**  
 contains **Port** interface for decode and encode serializer. It will be used in our API to decode and encode data.
    - **json**  

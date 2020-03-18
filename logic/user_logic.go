@@ -30,7 +30,7 @@ func (u *userService) GetAll() ([]m.User, error) {
 }
 
 func (u *userService) GetById(id string) (*m.User, error) {
-	res, e := u.userRepo.GetBy(map[string]interface{}{"_id": id})
+	res, e := u.userRepo.GetBy(map[string]interface{}{"ID": id})
 	if e != nil {
 		return res, e
 	}
@@ -62,14 +62,14 @@ func (u *userService) Update(user *m.User) error {
 	if user.Password != "" {
 		user.Password = repo.EncryptPassword(user.Password)
 	}
-	return u.userRepo.Update(user, map[string]interface{}{"_id": user.ID})
+	return u.userRepo.Update(user)
 
 }
 func (u *userService) Delete(user *m.User) error {
 	if user.ID == "" {
 		return errs.Wrap(helper.ErrUserNotFound, "service.User.Delete")
 	}
-	if e := u.userRepo.Delete(map[string]interface{}{"_id": user.ID}); e != nil {
+	if e := u.userRepo.Delete(user); e != nil {
 		return e
 	}
 	return nil
