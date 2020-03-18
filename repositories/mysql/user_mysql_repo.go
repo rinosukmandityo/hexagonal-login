@@ -87,6 +87,9 @@ func (r *newsMySQLRepository) GetBy(filter map[string]interface{}) (*m.User, err
 	q, dataFields := constructGetBy(filter)
 
 	if e = db.Get(res, q, dataFields...); e != nil {
+		if e == sql.ErrNoRows {
+			return res, errors.Wrap(helper.ErrUserNotFound, "repository.User.GetBy")
+		}
 		return res, errors.Wrap(e, "repository.User.GetBy")
 	}
 	return res, nil
