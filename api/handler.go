@@ -4,8 +4,8 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 
-	"github.com/rinosukmandityo/hexagonal-login/logic"
 	rh "github.com/rinosukmandityo/hexagonal-login/repositories/helper"
+	"github.com/rinosukmandityo/hexagonal-login/services/logic"
 )
 
 func RegisterHandler() *chi.Mux {

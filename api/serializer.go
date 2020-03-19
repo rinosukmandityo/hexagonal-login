@@ -1,9 +1,9 @@
 package api
 
 import (
-	slz "github.com/rinosukmandityo/hexagonal-login/serializer"
-	js "github.com/rinosukmandityo/hexagonal-login/serializer/json"
-	ms "github.com/rinosukmandityo/hexagonal-login/serializer/msgpack"
+	slz "github.com/rinosukmandityo/hexagonal-login/api/serializer"
+	js "github.com/rinosukmandityo/hexagonal-login/api/serializer/json"
+	ms "github.com/rinosukmandityo/hexagonal-login/api/serializer/msgpack"
 )
 
 var (

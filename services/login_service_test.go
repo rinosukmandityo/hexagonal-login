@@ -7,10 +7,10 @@ import (
 	"testing"
 
 	_ "github.com/rinosukmandityo/hexagonal-login/api"
-	"github.com/rinosukmandityo/hexagonal-login/logic"
 	m "github.com/rinosukmandityo/hexagonal-login/models"
 	rh "github.com/rinosukmandityo/hexagonal-login/repositories/helper"
 	. "github.com/rinosukmandityo/hexagonal-login/services"
+	"github.com/rinosukmandityo/hexagonal-login/services/logic"
 )
 
 /*

@@ -2,7 +2,6 @@ package mongo
 
 import (
 	"context"
-	"gopkg.in/mgo.v2/bson"
 	"time"
 
 	"github.com/rinosukmandityo/hexagonal-login/helper"
@@ -95,7 +94,7 @@ func (r *userMongoRepository) Update(data *m.User) error {
 	defer cancel()
 	c := r.client.Database(r.database).Collection(data.TableName())
 	filter := map[string]interface{}{"_id": data.ID}
-	if res, e := c.UpdateOne(ctx, filter, bson.M{"$set": data}, options.Update().SetUpsert(false)); e != nil {
+	if res, e := c.UpdateOne(ctx, filter, map[string]interface{}{"$set": data}, options.Update().SetUpsert(false)); e != nil {
 		return errors.Wrap(e, "repository.User.Update")
 	} else {
 		if res.MatchedCount == 0 && res.ModifiedCount == 0 {
@@ -104,7 +103,6 @@ func (r *userMongoRepository) Update(data *m.User) error {
 	}
 
 	return nil
-
 }
 func (r *userMongoRepository) Delete(data *m.User) error {
 	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)

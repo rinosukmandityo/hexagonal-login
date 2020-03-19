@@ -34,13 +34,13 @@ func (u *userhandler) Get(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 			return
 		}
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		http.Error(w, e.Error(), http.StatusBadRequest)
 		return
 	}
 	contentType := r.Header.Get("Content-Type")
 	respBody, e := GetSerializer(contentType).Encode(user)
 	if e != nil {
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		http.Error(w, e.Error(), http.StatusBadRequest)
 		return
 	}
 	SetupResponse(w, contentType, respBody, http.StatusFound)
@@ -50,21 +50,21 @@ func (u *userhandler) Post(w http.ResponseWriter, r *http.Request) {
 	contentType := r.Header.Get("Content-Type")
 	requestBody, e := ioutil.ReadAll(r.Body)
 	if e != nil {
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		http.Error(w, e.Error(), http.StatusBadRequest)
 		return
 	}
 	user, e := GetSerializer(contentType).Decode(requestBody)
 	if e != nil {
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		http.Error(w, e.Error(), http.StatusBadRequest)
 		return
 	}
 	if e = u.userService.Store(user); e != nil {
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		http.Error(w, e.Error(), http.StatusBadRequest)
 		return
 	}
 	respBody, e := GetSerializer(contentType).Encode(user)
 	if e != nil {
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		http.Error(w, e.Error(), http.StatusBadRequest)
 		return
 	}
 	SetupResponse(w, contentType, respBody, http.StatusCreated)
@@ -74,21 +74,21 @@ func (u *userhandler) Update(w http.ResponseWriter, r *http.Request) {
 	contentType := r.Header.Get("Content-Type")
 	requestBody, e := ioutil.ReadAll(r.Body)
 	if e != nil {
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		http.Error(w, e.Error(), http.StatusBadRequest)
 		return
 	}
 	user, e := GetSerializer(contentType).Decode(requestBody)
 	if e != nil {
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		http.Error(w, e.Error(), http.StatusBadRequest)
 		return
 	}
 	if e = u.userService.Update(user); e != nil {
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		http.Error(w, e.Error(), http.StatusBadRequest)
 		return
 	}
 	respBody, e := GetSerializer(contentType).Encode(user)
 	if e != nil {
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		http.Error(w, e.Error(), http.StatusBadRequest)
 		return
 	}
 	SetupResponse(w, contentType, respBody, http.StatusOK)
@@ -99,16 +99,16 @@ func (u *userhandler) Delete(w http.ResponseWriter, r *http.Request) {
 	contentType := r.Header.Get("Content-Type")
 	requestBody, e := ioutil.ReadAll(r.Body)
 	if e != nil {
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		http.Error(w, e.Error(), http.StatusBadRequest)
 		return
 	}
 	user, e := GetSerializer(contentType).Decode(requestBody)
 	if e != nil {
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		http.Error(w, e.Error(), http.StatusBadRequest)
 		return
 	}
 	if e = u.userService.Delete(user); e != nil {
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		http.Error(w, e.Error(), http.StatusBadRequest)
 		return
 	}
 	respBody, e := GetSerializer(contentType).Encode(user)

@@ -32,9 +32,10 @@ After setting the database information we only need to run the main.go file
 #### API List & Payloads
 Here is our API List and its payload:  
 
-1. **/{_user\_id_}**  
-`/userid01`
-2. **/**  
+1. [GET] **/user/{_user\_id_}**  
+`/user/userid01`
+2. [POST] **/user**  
+`/user`
 ```javascript
 {
 	Name:     "Name",  
@@ -46,7 +47,8 @@ Here is our API List and its payload:
 	IsActive: false  
 }
 ```
-3. **/update**  
+3. [PUT] **/user/{_user\_id_}**  
+`/user/userid01`
 ```javascript
 {
 	Name:     "Name",  
@@ -58,12 +60,9 @@ Here is our API List and its payload:
 	IsActive: false  
 }
 ```
-4. **/delete**  
-```javascript
-{
-	ID:       "userid01"  
-}
-```
+4. [DELETE] **/user/{_user\_id_}**  
+`/user/userid01`
+
 5. **/auth**  
 ```javascript
 {  
