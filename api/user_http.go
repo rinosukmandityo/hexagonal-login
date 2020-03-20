@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"io/ioutil"
 	"net/http"
 
@@ -12,6 +13,7 @@ import (
 )
 
 type UserHandler interface {
+	UserCtx(http.Handler) http.Handler
 	Get(http.ResponseWriter, *http.Request)
 	Post(http.ResponseWriter, *http.Request)
 	Update(http.ResponseWriter, *http.Request)
@@ -24,6 +26,23 @@ type userhandler struct {
 
 func NewUserHandler(userService svc.UserService) UserHandler {
 	return &userhandler{userService}
+}
+
+func (u *userhandler) UserCtx(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		id := chi.URLParam(r, "id")
+		user, e := u.userService.GetById(id)
+		if e != nil {
+			if errors.Cause(e) == helper.ErrUserNotFound {
+				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+				return
+			}
+			http.Error(w, e.Error(), http.StatusBadRequest)
+			return
+		}
+		ctx := context.WithValue(r.Context(), "user", user)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
 }
 
 func (u *userhandler) Get(w http.ResponseWriter, r *http.Request) {

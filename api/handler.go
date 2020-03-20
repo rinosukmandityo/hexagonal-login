@@ -23,10 +23,17 @@ func RegisterHandler() *chi.Mux {
 }
 
 func registerUserHandler(r *chi.Mux, handler UserHandler) {
-	r.Get("/user/{id}", handler.Get)
-	r.Post("/user", handler.Post)
-	r.Put("/user/{id}", handler.Update)
-	r.Delete("/user/{id}", handler.Delete)
+	// Subrouters:
+	r.Route("/user", func(r chi.Router) {
+		r.Post("/", handler.Post) // POST /user
+		// Subrouters:
+		r.Route("/{id}", func(r chi.Router) {
+			r.Use(handler.UserCtx)
+			r.Get("/", handler.Get)       // GET /user/userid01
+			r.Put("/", handler.Update)    // PUT /user/userid01
+			r.Delete("/", handler.Delete) // DELETE /user/userid01
+		})
+	})
 }
 
 func registerLoginHandler(r *chi.Mux, handler LoginHandler) {
