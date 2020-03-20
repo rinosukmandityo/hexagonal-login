@@ -63,7 +63,7 @@ Here is our API List and its payload:
 4. [DELETE] **/user/{_user\_id_}**  
 `/user/userid01`
 
-5. **/auth**  
+5. [POST] **/auth**  
 ```javascript
 {  
 	Username: "username",  
