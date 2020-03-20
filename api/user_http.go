@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/rinosukmandityo/hexagonal-login/helper"
+	m "github.com/rinosukmandityo/hexagonal-login/models"
 	svc "github.com/rinosukmandityo/hexagonal-login/services"
 
 	"github.com/go-chi/chi"
@@ -46,18 +47,15 @@ func (u *userhandler) UserCtx(next http.Handler) http.Handler {
 }
 
 func (u *userhandler) Get(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
-	user, e := u.userService.GetById(id)
-	if e != nil {
-		if errors.Cause(e) == helper.ErrUserNotFound {
-			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-			return
-		}
-		http.Error(w, e.Error(), http.StatusBadRequest)
+	ctx := r.Context()
+	data, ok := ctx.Value("user").(*m.User)
+	if !ok {
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
+
 	contentType := r.Header.Get("Content-Type")
-	respBody, e := GetSerializer(contentType).Encode(user)
+	respBody, e := GetSerializer(contentType).Encode(data)
 	if e != nil {
 		http.Error(w, e.Error(), http.StatusBadRequest)
 		return
@@ -90,7 +88,13 @@ func (u *userhandler) Post(w http.ResponseWriter, r *http.Request) {
 }
 
 func (u *userhandler) Update(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
+	ctx := r.Context()
+	existingData, ok := ctx.Value("user").(*m.User)
+	if !ok {
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
+	id := existingData.ID
 	contentType := r.Header.Get("Content-Type")
 	requestBody, e := ioutil.ReadAll(r.Body)
 	if e != nil {
@@ -117,7 +121,13 @@ func (u *userhandler) Update(w http.ResponseWriter, r *http.Request) {
 }
 
 func (u *userhandler) Delete(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
+	ctx := r.Context()
+	existingData, ok := ctx.Value("user").(*m.User)
+	if !ok {
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
+	id := existingData.ID
 	contentType := r.Header.Get("Content-Type")
 	if e := u.userService.Delete(id); e != nil {
 		http.Error(w, e.Error(), http.StatusBadRequest)
