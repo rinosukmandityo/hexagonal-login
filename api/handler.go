@@ -23,10 +23,10 @@ func RegisterHandler() *chi.Mux {
 }
 
 func registerUserHandler(r *chi.Mux, handler UserHandler) {
-	r.Get("/{id}", handler.Get)
-	r.Post("/", handler.Post)
-	r.Post("/update", handler.Update)
-	r.Post("/delete", handler.Delete)
+	r.Get("/user/{id}", handler.Get)
+	r.Post("/user", handler.Post)
+	r.Put("/user/{id}", handler.Update)
+	r.Delete("/user/{id}", handler.Delete)
 }
 
 func registerLoginHandler(r *chi.Mux, handler LoginHandler) {

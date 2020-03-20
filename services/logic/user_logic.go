@@ -38,38 +38,41 @@ func (u *userService) GetById(id string) (*m.User, error) {
 	return res, nil
 
 }
-func (u *userService) Store(user *m.User) error {
-	if e := validate.Validate(user); e != nil {
+func (u *userService) Store(data *m.User) error {
+	if e := validate.Validate(data); e != nil {
 		return errs.Wrap(helper.ErrUserInvalid, "service.User.Store")
 	}
-	if user.ID == "" {
-		user.ID = shortid.MustGenerate()
+	if data.ID == "" {
+		data.ID = shortid.MustGenerate()
 	}
-	if isFound, _, _ := u.GetByUsername(user.Username); isFound {
+	if isFound, _, _ := u.GetByUsername(data.Username); isFound {
 		return errs.Wrap(helper.ErrUserNameDuplicate, "service.User.Store")
 	}
-	user.Password = repo.EncryptPassword(user.Password)
-	return u.userRepo.Store(user)
+	data.Password = repo.EncryptPassword(data.Password)
+	return u.userRepo.Store(data)
 
 }
-func (u *userService) Update(user *m.User) error {
-	if e := validate.Validate(user); e != nil {
-		return errs.Wrap(helper.ErrUserInvalid, "service.User.Update")
+func (u *userService) Update(data map[string]interface{}, id string) (*m.User, error) {
+	user := new(m.User)
+	var e error
+	if data["ID"].(string) == "" {
+		return user, errs.Wrap(helper.ErrUserInvalid, "service.User.Update")
 	}
-	if user.ID == "" {
-		user.ID = shortid.MustGenerate()
+	if data["Password"].(string) != "" {
+		data["Password"] = repo.EncryptPassword(data["Password"].(string))
 	}
-	if user.Password != "" {
-		user.Password = repo.EncryptPassword(user.Password)
+	user, e = u.userRepo.Update(data, id)
+	if e != nil {
+		return user, errs.Wrap(e, "service.User.Update")
 	}
-	return u.userRepo.Update(user)
+	return user, nil
 
 }
-func (u *userService) Delete(user *m.User) error {
-	if user.ID == "" {
-		return errs.Wrap(helper.ErrUserNotFound, "service.User.Delete")
+func (u *userService) Delete(id string) error {
+	if id == "" {
+		return errs.Wrap(helper.ErrUserInvalid, "service.User.Delete")
 	}
-	if e := u.userRepo.Delete(user); e != nil {
+	if e := u.userRepo.Delete(id); e != nil {
 		return e
 	}
 	return nil

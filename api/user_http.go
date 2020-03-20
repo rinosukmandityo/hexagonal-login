@@ -71,18 +71,20 @@ func (u *userhandler) Post(w http.ResponseWriter, r *http.Request) {
 }
 
 func (u *userhandler) Update(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
 	contentType := r.Header.Get("Content-Type")
 	requestBody, e := ioutil.ReadAll(r.Body)
 	if e != nil {
 		http.Error(w, e.Error(), http.StatusBadRequest)
 		return
 	}
-	user, e := GetSerializer(contentType).Decode(requestBody)
+	data, e := GetSerializer(contentType).DecodeMap(requestBody)
 	if e != nil {
 		http.Error(w, e.Error(), http.StatusBadRequest)
 		return
 	}
-	if e = u.userService.Update(user); e != nil {
+	user, e := u.userService.Update(data, id)
+	if e != nil {
 		http.Error(w, e.Error(), http.StatusBadRequest)
 		return
 	}
@@ -96,21 +98,16 @@ func (u *userhandler) Update(w http.ResponseWriter, r *http.Request) {
 }
 
 func (u *userhandler) Delete(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
 	contentType := r.Header.Get("Content-Type")
-	requestBody, e := ioutil.ReadAll(r.Body)
+	if e := u.userService.Delete(id); e != nil {
+		http.Error(w, e.Error(), http.StatusBadRequest)
+		return
+	}
+	respBody, e := GetSerializer(contentType).EncodeMap(map[string]interface{}{"ID": id})
 	if e != nil {
 		http.Error(w, e.Error(), http.StatusBadRequest)
 		return
 	}
-	user, e := GetSerializer(contentType).Decode(requestBody)
-	if e != nil {
-		http.Error(w, e.Error(), http.StatusBadRequest)
-		return
-	}
-	if e = u.userService.Delete(user); e != nil {
-		http.Error(w, e.Error(), http.StatusBadRequest)
-		return
-	}
-	respBody, e := GetSerializer(contentType).Encode(user)
 	SetupResponse(w, contentType, respBody, http.StatusOK)
 }

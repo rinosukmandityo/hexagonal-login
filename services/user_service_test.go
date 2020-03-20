@@ -93,7 +93,7 @@ func InsertUser(t *testing.T) {
 	for _, data := range testdata {
 		wg.Add(1)
 		go func(_data m.User) {
-			userService.Delete(&_data)
+			userService.Delete(_data.ID)
 			wg.Done()
 		}(data)
 	}
@@ -145,13 +145,17 @@ func UpdateUser(t *testing.T) {
 	t.Run("Case 1: Update data", func(t *testing.T) {
 		_data := testdata[0]
 		_data.Username = _data.Username + "UPDATED"
-		if e := userService.Update(&_data); e != nil {
+		_dataMap := _data.GetMapFormat()
+		_, e := userService.Update(_dataMap, _data.ID)
+		if e != nil {
 			t.Errorf("[ERROR] - Failed to update data %s ", e.Error())
 		}
 	})
 	t.Run("Case 2: Negative Test", func(t *testing.T) {
 		_data := m.User{ID: "ID DID NOT EXISTS"}
-		if e := userService.Update(&_data); e == nil {
+		dataMap := _data.GetMapFormat()
+		_, e := userService.Update(dataMap, _data.ID)
+		if e == nil {
 			t.Error("[ERROR] - It should be error 'User Not Found'")
 		}
 	})
@@ -161,13 +165,13 @@ func DeleteUser(t *testing.T) {
 	testdata := UserTestData()
 	t.Run("Case 1: Delete data", func(t *testing.T) {
 		_data := testdata[1]
-		if e := userService.Delete(&_data); e != nil {
+		if e := userService.Delete(_data.ID); e != nil {
 			t.Errorf("[ERROR] - Failed to delete data %s ", e.Error())
 		}
 	})
 	t.Run("Case 2: Negative Test", func(t *testing.T) {
 		_data := testdata[1]
-		if e := userService.Delete(&_data); e == nil {
+		if e := userService.Delete(_data.ID); e == nil {
 			t.Error("[ERROR] - It should be error 'User Not Found'")
 		}
 	})
@@ -190,8 +194,6 @@ func GetUser(t *testing.T) {
 
 func DeleteAll(t *testing.T) {
 	for i := 1; i <= 4; i++ {
-		data := UserTestData()[0]
-		data.ID = fmt.Sprintf("userid0%d", i)
-		userService.Delete(&data)
+		userService.Delete(fmt.Sprintf("userid0%d", i))
 	}
 }

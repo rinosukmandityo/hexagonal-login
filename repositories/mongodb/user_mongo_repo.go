@@ -65,10 +65,7 @@ func (r *userMongoRepository) GetBy(filter map[string]interface{}) (*m.User, err
 	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
 	defer cancel()
 	c := r.client.Database(r.database).Collection(res.TableName())
-	if _, ok := filter["ID"]; ok {
-		filter["_id"] = filter["ID"]
-		delete(filter, "ID")
-	}
+	convertID(filter)
 	if e := c.FindOne(ctx, filter).Decode(res); e != nil {
 		if e == mongo.ErrNoDocuments {
 			return res, errors.Wrap(helper.ErrUserNotFound, "repository.User.GetBy")
@@ -89,25 +86,37 @@ func (r *userMongoRepository) Store(data *m.User) error {
 	return nil
 
 }
-func (r *userMongoRepository) Update(data *m.User) error {
+func (r *userMongoRepository) Update(data map[string]interface{}, id string) (*m.User, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
 	defer cancel()
-	c := r.client.Database(r.database).Collection(data.TableName())
-	filter := map[string]interface{}{"_id": data.ID}
+	c := r.client.Database(r.database).Collection(new(m.User).TableName())
+
+	user := new(m.User)
+	var e error
+
+	convertID(data)
+	filter := map[string]interface{}{"_id": id}
+
 	if res, e := c.UpdateOne(ctx, filter, map[string]interface{}{"$set": data}, options.Update().SetUpsert(false)); e != nil {
-		return errors.Wrap(e, "repository.User.Update")
+		return user, errors.Wrap(e, "repository.User.Update")
 	} else {
 		if res.MatchedCount == 0 && res.ModifiedCount == 0 {
-			return errors.Wrap(errors.New("User Not Found"), "repository.User.Update")
+			return user, errors.Wrap(errors.New("User Not Found"), "repository.User.Update")
 		}
 	}
+	user, e = r.GetBy(filter)
+	if e != nil {
+		return user, errors.Wrap(e, "repository.User.Update")
+	}
 
-	return nil
+	return user, nil
 }
-func (r *userMongoRepository) Delete(data *m.User) error {
+func (r *userMongoRepository) Delete(id string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
 	defer cancel()
-	filter := map[string]interface{}{"_id": data.ID}
+
+	filter := map[string]interface{}{"_id": id}
+
 	c := r.client.Database(r.database).Collection(new(m.User).TableName())
 	if res, e := c.DeleteOne(ctx, filter); e != nil {
 		return errors.Wrap(e, "repository.User.Delete")
@@ -139,4 +148,11 @@ func (r *userMongoRepository) Authenticate(username, password string) (bool, *m.
 	}
 
 	return true, user, nil
+}
+
+func convertID(data map[string]interface{}) {
+	if _, ok := data["ID"]; ok {
+		data["_id"] = data["ID"]
+		delete(data, "ID")
+	}
 }

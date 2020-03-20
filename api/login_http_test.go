@@ -146,7 +146,7 @@ func InsertUser(t *testing.T) {
 	for _, data := range testdata {
 		wg.Add(1)
 		go func(_data m.User) {
-			userService.Delete(&_data)
+			userService.Delete(_data.ID)
 			wg.Done()
 		}(data)
 	}

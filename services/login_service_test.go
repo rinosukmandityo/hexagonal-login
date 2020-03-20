@@ -6,7 +6,6 @@ import (
 	"sync"
 	"testing"
 
-	_ "github.com/rinosukmandityo/hexagonal-login/api"
 	m "github.com/rinosukmandityo/hexagonal-login/models"
 	rh "github.com/rinosukmandityo/hexagonal-login/repositories/helper"
 	. "github.com/rinosukmandityo/hexagonal-login/services"
@@ -90,7 +89,7 @@ func InsertUser(t *testing.T) {
 	for _, data := range testdata {
 		wg.Add(1)
 		go func(_data m.User) {
-			userService.Delete(&_data)
+			userService.Delete(_data.ID)
 			wg.Done()
 		}(data)
 	}

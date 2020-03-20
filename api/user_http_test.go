@@ -118,15 +118,38 @@ func PostData(t *testing.T, ts *httptest.Server, url string, _data m.User) error
 		return e
 	}
 
-	switch url {
-	case "/":
-		if resp.StatusCode != http.StatusCreated {
-			return errors.New("status should be 'Status Created' (201)")
-		}
-	default:
-		if resp.StatusCode != http.StatusOK {
-			return errors.New("status should be 'Status OK' (200)")
-		}
+	if resp.StatusCode != http.StatusCreated {
+		return errors.New("status should be 'Status Created' (201)")
+	}
+
+	return nil
+}
+
+func PutData(t *testing.T, ts *httptest.Server, url string, _data m.User) error {
+	dataBytes, e := getBytes(_data)
+	if e != nil {
+		return e
+	}
+	resp, _, e := makeRequest(t, ts, "PUT", url, bytes.NewReader(dataBytes))
+	if e != nil {
+		return e
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return errors.New("status should be 'Status OK' (200)")
+	}
+
+	return nil
+}
+
+func DeleteData(t *testing.T, ts *httptest.Server, url string) error {
+	resp, _, e := makeRequest(t, ts, "DELETE", url, nil)
+	if e != nil {
+		return e
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return errors.New("status should be 'Status OK' (200)")
 	}
 
 	return nil
@@ -162,7 +185,7 @@ func InsertUser(t *testing.T) {
 	for _, data := range testdata {
 		wg.Add(1)
 		go func(_data m.User) {
-			userService.Delete(&_data)
+			userService.Delete(_data.ID)
 			wg.Done()
 		}(data)
 	}
@@ -172,7 +195,7 @@ func InsertUser(t *testing.T) {
 		for _, data := range testdata {
 			wg.Add(1)
 			go func(_data m.User) {
-				if e := PostData(t, ts, "/", _data); e != nil {
+				if e := PostData(t, ts, "/user", _data); e != nil {
 					t.Errorf("[ERROR] - Failed to save data %s ", e.Error())
 				}
 				wg.Done()
@@ -192,7 +215,7 @@ func InsertUser(t *testing.T) {
 		t.Run("Case 2.1: Duplicate username", func(t *testing.T) {
 			_data := testdata[0]
 			_data.ID = "userid04"
-			if e := PostData(t, ts, "/", _data); e == nil {
+			if e := PostData(t, ts, "/user", _data); e == nil {
 				t.Error("[ERROR] - duplicate validation username is not working")
 			}
 		})
@@ -200,7 +223,7 @@ func InsertUser(t *testing.T) {
 		t.Run("Case 2.2: Duplicate ID", func(t *testing.T) {
 			_data := testdata[0]
 			_data.Username = "username04"
-			if e := PostData(t, ts, "/", _data); e == nil {
+			if e := PostData(t, ts, "/user", _data); e == nil {
 				t.Error("[ERROR] - duplicate validation ID is not working")
 			}
 		})
@@ -212,13 +235,13 @@ func UpdateUser(t *testing.T) {
 	t.Run("Case 1: Update data", func(t *testing.T) {
 		_data := testdata[0]
 		_data.Username = _data.Username + "UPDATED"
-		if e := PostData(t, ts, "/update", _data); e != nil {
+		if e := PutData(t, ts, fmt.Sprintf("/user/%s", _data.ID), _data); e != nil {
 			t.Errorf("[ERROR] - Failed to update data %s ", e.Error())
 		}
 	})
 	t.Run("Case 2: Negative Test", func(t *testing.T) {
 		_data := m.User{ID: "ID DID NOT EXISTS"}
-		if e := PostData(t, ts, "/update", _data); e == nil {
+		if e := PutData(t, ts, fmt.Sprintf("/user/%s", _data.ID), _data); e == nil {
 			t.Error("[ERROR] - It should be error 'User Not Found'")
 		}
 	})
@@ -228,13 +251,13 @@ func DeleteUser(t *testing.T) {
 	testdata := UserTestData()
 	t.Run("Case 1: Delete data", func(t *testing.T) {
 		_data := testdata[1]
-		if e := PostData(t, ts, "/delete", _data); e != nil {
+		if e := DeleteData(t, ts, fmt.Sprintf("/user/%s", _data.ID)); e != nil {
 			t.Errorf("[ERROR] - Failed to delete data %s ", e.Error())
 		}
 	})
 	t.Run("Case 2: Negative Test", func(t *testing.T) {
 		_data := testdata[1]
-		if e := PostData(t, ts, "/delete", _data); e == nil {
+		if e := DeleteData(t, ts, fmt.Sprintf("/user/%s", _data.ID)); e == nil {
 			t.Error("[ERROR] - It should be error 'User Not Found'")
 		}
 	})
@@ -244,12 +267,12 @@ func GetDataById(t *testing.T) {
 	testdata := UserTestData()
 	t.Run("Case 1: Get Data", func(t *testing.T) {
 		_data := testdata[0]
-		if e := GetData(t, ts, fmt.Sprintf("/%s", _data.ID), _data.ID); e != nil {
+		if e := GetData(t, ts, fmt.Sprintf("/user/%s", _data.ID), _data.ID); e != nil {
 			t.Errorf("[ERROR] - Failed to get data %s", e.Error())
 		}
 	})
 	t.Run("Case 2: Negative Test", func(t *testing.T) {
-		if e := GetData(t, ts, "/ID-DID-NOT-EXISTS", ""); e == nil {
+		if e := GetData(t, ts, "/user/ID-DID-NOT-EXISTS", ""); e == nil {
 			t.Error("[ERROR] - It should be error 'Data Not Found'")
 		}
 	})

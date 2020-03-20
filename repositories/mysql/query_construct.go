@@ -7,12 +7,11 @@ import (
 	m "github.com/rinosukmandityo/hexagonal-login/models"
 )
 
-func constructUpdateQuery(data *m.User, filter map[string]interface{}) (string, []interface{}) {
+func constructUpdateQuery(data, filter map[string]interface{}) (string, []interface{}) {
 	// 	"UPDATE <tablename> SET field1=?, field2=?  WHERE filter1=?"
-	dataMap := data.GetMapFormat()
-	q := fmt.Sprintf("UPDATE %s SET", data.TableName())
+	q := fmt.Sprintf("UPDATE %s SET", new(m.User).TableName())
 	values := []interface{}{}
-	for k, v := range dataMap {
+	for k, v := range data {
 		q += fmt.Sprintf(" %s=?,", k)
 		values = append(values, v)
 	}

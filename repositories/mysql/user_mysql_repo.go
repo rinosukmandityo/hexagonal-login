@@ -122,43 +122,49 @@ func (r *newsMySQLRepository) Store(data *m.User) error {
 
 }
 
-func (r *newsMySQLRepository) Update(data *m.User) error {
+func (r *newsMySQLRepository) Update(data map[string]interface{}, id string) (*m.User, error) {
+	user := new(m.User)
+	var e error
 	db, e := newUserClient(r.url)
 	if e != nil {
-		return errors.Wrap(e, "repository.User.Update")
+		return user, errors.Wrap(e, "repository.User.Update")
 	}
 	defer db.Close()
 	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
 	defer cancel()
 	conn, e := db.Conn(ctx)
 	if e != nil {
-		return errors.Wrap(e, "repository.User.Update")
+		return user, errors.Wrap(e, "repository.User.Update")
 	}
 	defer conn.Close()
 
-	filter := map[string]interface{}{"ID": data.ID}
+	filter := map[string]interface{}{"ID": id}
 	q, dataField := constructUpdateQuery(data, filter)
 	stmt, e := conn.PrepareContext(ctx, q)
 	if e != nil {
-		return errors.Wrap(e, "repository.User.Update")
+		return user, errors.Wrap(e, "repository.User.Update")
 	}
 	defer stmt.Close()
 	if res, e := stmt.Exec(dataField...); e != nil {
-		return errors.Wrap(e, "repository.User.Update")
+		return user, errors.Wrap(e, "repository.User.Update")
 	} else {
 		count, e := res.RowsAffected()
 		if e != nil {
-			return errors.Wrap(e, "repository.User.Update")
+			return user, errors.Wrap(e, "repository.User.Update")
 		}
 		if count == 0 {
-			return errors.Wrap(helper.ErrUserNotFound, "repository.User.Update")
+			return user, errors.Wrap(helper.ErrUserNotFound, "repository.User.Update")
 		}
 	}
+	user, e = r.GetBy(filter)
+	if e != nil {
+		return user, errors.Wrap(e, "repository.User.Update")
+	}
 
-	return nil
+	return user, nil
 
 }
-func (r *newsMySQLRepository) Delete(data *m.User) error {
+func (r *newsMySQLRepository) Delete(id string) error {
 	db, e := newUserClient(r.url)
 	if e != nil {
 		return errors.Wrap(e, "repository.User.Delete")
@@ -172,7 +178,7 @@ func (r *newsMySQLRepository) Delete(data *m.User) error {
 	}
 	defer conn.Close()
 
-	filter := map[string]interface{}{"ID": data.ID}
+	filter := map[string]interface{}{"ID": id}
 	q, dataFields := constructDeleteQuery(filter)
 	stmt, e := conn.PrepareContext(ctx, q)
 	if e != nil {
