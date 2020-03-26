@@ -33,7 +33,7 @@ func newUserMongoClient(mongoURL string, mongoTimeout int) (*mongo.Client, error
 	return client, e
 }
 
-func NewUserMongoRepository(mongoURL, mongoDB string, mongoTimeout int) (repo.UserRepository, error) {
+func NewUserRepository(mongoURL, mongoDB string, mongoTimeout int) (repo.UserRepository, error) {
 	repo := &userMongoRepository{
 		timeout:  time.Duration(mongoTimeout) * time.Second,
 		database: mongoDB,

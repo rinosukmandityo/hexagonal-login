@@ -15,7 +15,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-type newsMySQLRepository struct {
+type userMySQLRepository struct {
 	url     string
 	timeout time.Duration
 }
@@ -32,7 +32,7 @@ func newUserClient(URL string) (*sql.DB, error) {
 	return db, e
 }
 
-func (r *newsMySQLRepository) createNewTable() error {
+func (r *userMySQLRepository) createNewTable() error {
 	schema := `CREATE TABLE ` + new(m.User).TableName() + ` (
 		ID VARCHAR(30) NOT NULL UNIQUE,
 		Name VARCHAR(30),
@@ -55,7 +55,7 @@ func (r *newsMySQLRepository) createNewTable() error {
 }
 
 func NewUserRepository(URL, DB string, timeout int) (repo.UserRepository, error) {
-	repo := &newsMySQLRepository{
+	repo := &userMySQLRepository{
 		url:     fmt.Sprintf("%s?parseTime=true", URL),
 		timeout: time.Duration(timeout) * time.Second,
 	}
@@ -63,7 +63,7 @@ func NewUserRepository(URL, DB string, timeout int) (repo.UserRepository, error)
 	return repo, nil
 }
 
-func (r *newsMySQLRepository) GetAll() ([]m.User, error) {
+func (r *userMySQLRepository) GetAll() ([]m.User, error) {
 	res := []m.User{}
 	db, e := sqlx.Connect("mysql", r.url)
 	if e != nil {
@@ -77,7 +77,7 @@ func (r *newsMySQLRepository) GetAll() ([]m.User, error) {
 	}
 	return res, nil
 }
-func (r *newsMySQLRepository) GetBy(filter map[string]interface{}) (*m.User, error) {
+func (r *userMySQLRepository) GetBy(filter map[string]interface{}) (*m.User, error) {
 	res := new(m.User)
 	db, e := sqlx.Connect("mysql", r.url)
 	if e != nil {
@@ -95,7 +95,7 @@ func (r *newsMySQLRepository) GetBy(filter map[string]interface{}) (*m.User, err
 	return res, nil
 
 }
-func (r *newsMySQLRepository) Store(data *m.User) error {
+func (r *userMySQLRepository) Store(data *m.User) error {
 	db, e := newUserClient(r.url)
 	if e != nil {
 		return errors.Wrap(e, "repository.User.Store")
@@ -122,7 +122,7 @@ func (r *newsMySQLRepository) Store(data *m.User) error {
 
 }
 
-func (r *newsMySQLRepository) Update(data map[string]interface{}, id string) (*m.User, error) {
+func (r *userMySQLRepository) Update(data map[string]interface{}, id string) (*m.User, error) {
 	user := new(m.User)
 	var e error
 	db, e := newUserClient(r.url)
@@ -164,7 +164,7 @@ func (r *newsMySQLRepository) Update(data map[string]interface{}, id string) (*m
 	return user, nil
 
 }
-func (r *newsMySQLRepository) Delete(id string) error {
+func (r *userMySQLRepository) Delete(id string) error {
 	db, e := newUserClient(r.url)
 	if e != nil {
 		return errors.Wrap(e, "repository.User.Delete")
@@ -201,7 +201,7 @@ func (r *newsMySQLRepository) Delete(id string) error {
 
 }
 
-func (r *newsMySQLRepository) Authenticate(username, password string) (bool, *m.User, error) {
+func (r *userMySQLRepository) Authenticate(username, password string) (bool, *m.User, error) {
 	res := new(m.User)
 	db, e := sqlx.Connect("mysql", r.url)
 	if e != nil {

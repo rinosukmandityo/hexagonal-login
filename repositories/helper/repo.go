@@ -42,7 +42,7 @@ func ChooseRepo() repo.UserRepository {
 			timeout = 10
 		}
 
-		repo, e := mg.NewUserMongoRepository(url, db, timeout)
+		repo, e := mg.NewUserRepository(url, db, timeout)
 		if e != nil {
 			log.Fatal(e)
 		}
